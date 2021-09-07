@@ -1,0 +1,6 @@
+# Byte-compiled / optimized / DLL files
+data/
+data2/
+log/
+__pycache__/
+.ipynb_checkpoints/
