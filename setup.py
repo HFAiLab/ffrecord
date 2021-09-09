@@ -17,7 +17,4 @@ setup(cmdclass={
       license='MIT',
       python_requires='>=3.6',
       install_requires=['libaio', 'torch>=1.6'],
-      extras_require={
-          'torch': ['torch'],
-      },
       packages=['ffrecord', 'ffrecord/torch'])
