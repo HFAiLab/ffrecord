@@ -28,6 +28,6 @@ jobs:
         with:
           python-version: '3.6'
       - name: Install packages
-        run: pip install torch libaio
+        run: pip install numpy torch libaio
       - name: test
         run: python -m unittest tests/tests_*.py
