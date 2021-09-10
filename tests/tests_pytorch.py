@@ -13,7 +13,7 @@ sys.path.insert(
     "/nfs-jd/prod/nfs1/zsy/pylibs/lib/python3.6/site-packages/ffrecord-1.1.0+e792bf8-py3.6.egg"
 )
 from ffrecord.fileio import FileWriter, FileReader
-from ffrecord.torch import Dataset as FFDataset, Dataloader as FFDataloader
+from ffrecord.torch import Dataset as FFDataset, DataLoader as FFDataLoader
 
 
 class DummyDataset(Dataset):
@@ -59,7 +59,7 @@ class TestDataLoader(unittest.TestCase):
         writer.close()
         # load dataset
         aiodataset = DummyFireFlyerDataset(file)
-        aiodataloader = FFDataloader(
+        aiodataloader = FFDataLoader(
             aiodataset,
             batch_size=8,
             shuffle=False,
