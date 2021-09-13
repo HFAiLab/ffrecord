@@ -20,7 +20,7 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 
 | field     | size (bytes)                  | description                     |
 |-----------|-------------------------------|---------------------------------|
-| checksum  | 4                             | CRC32 checksum of all data      |
+| checksum  | 4                             | CRC32 checksum of metadata      |
 | N         | 8                             | number of samples               |
 | checksums | 4 * N                         | CRC32 checksum of each sample   |
 | offsets   | 8 * N                         | byte offset of each sample      |
@@ -34,6 +34,7 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 - Python >= 3.6
 - Pytorch >= 1.6
 - [libaio 0.8.3](https://pypi.org/project/libaio/)
+- NumPy
 
 ### Install
 

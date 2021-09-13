@@ -18,10 +18,11 @@ File Format:
 +---------------------+---------------------+--------+----------------------+
 
 Fields:
+    checksum:     checksum of metadata
     N:            number of samples
-    checksum:     checksum of all data (disabled)
-    offsets:      offsets of each samples
     checksums:    checksums of each samples
+    offsets:      offsets of each samples
+    sample i:     data of the i-th sample
 
 """
 
@@ -50,7 +51,7 @@ class FileWriter():
         if not isinstance(fname, (str, os.PathLike)):
             raise TypeError("fname must be str or os.PathLike")
 
-        self.fd = os.open(fname, os.O_WRONLY | os.O_CREAT)
+        self.fd = os.open(fname, os.O_RDWR | os.O_CREAT)
         self.count = 0
         self.n = n
 
@@ -85,14 +86,28 @@ class FileWriter():
         self.count += 1
 
     def finish(self):
+        if self.n != self.count:
+            raise ValueError("number of sample written does not match the input number")
+
         os.lseek(self.fd, 0, os.SEEK_SET)
         # fill header
-        # TODO meta checksum
         os.write(self.fd, struct.pack("<IQ", 0, self.n))
         # checksums and offsets
         os.write(self.fd, self.checksums.tobytes())
         os.write(self.fd, self.offsets.tobytes())
 
+        # compute checksum for metadata
+        chunk_size = 64 * (1 << 20)  # 64 MB
+        start_pos = CHECKSUM_TYPE().itemsize
+        nbytes = 8 + CHECKSUM_TYPE().itemsize * self.n + OFFSET_TYPE().itemsize * self.n
+        end_pos = start_pos + nbytes
+
+        checksum = 0
+        for offset in range(start_pos, end_pos, chunk_size):
+            size = min(chunk_size, end_pos - offset)
+            data = os.pread(self.fd, size, offset)
+            checksum = zlib.crc32(data, checksum)
+        os.pwrite(self.fd, struct.pack("<I", checksum), 0)
         os.close(self.fd)
 
     def close(self):
@@ -162,6 +177,24 @@ class FileReader():
                                      dtype=OFFSET_TYPE)
         self.io_context = None
 
+    def validate(self):
+        """ validate checksum, this may take a long while
+        """
+        chunk_size = 64 * (1 << 20)  # 64 MB
+        start_pos = CHECKSUM_TYPE().itemsize
+        nbytes = 8 + CHECKSUM_TYPE().itemsize * self.n + OFFSET_TYPE().itemsize * self.n
+        end_pos = start_pos + nbytes
+
+        checksum = 0
+        for offset in range(start_pos, end_pos, chunk_size):
+            size = min(chunk_size, end_pos - offset)
+            data = os.pread(self.fd, size, offset)
+            checksum = zlib.crc32(data, checksum)
+
+        if checksum != self.checksum_all:
+            raise ValueError("checksum mismatched!")
+
+        
     def read(self, indices: List[int]) -> List[bytearray]:
         """ read a batch of samples
 

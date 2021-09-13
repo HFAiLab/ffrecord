@@ -24,6 +24,7 @@ class TestIO(unittest.TestCase):
         writer.close()
 
         reader = FileReader(file, check_data=True)
+        reader.validate()
         indexes = list(range(n))
         random.shuffle(indexes)
         for i in indexes:
@@ -57,6 +58,7 @@ class TestIO(unittest.TestCase):
         writer.close()
 
         reader = FileReader(file, check_data=True)
+        reader.validate()
         indexes = list(range(n))
         random.shuffle(indexes)
         batch_size = 10
