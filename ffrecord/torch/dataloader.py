@@ -15,7 +15,7 @@ from torch.utils.data import (
 )
 from torch.utils.data.dataloader import _DatasetKind
 
-from ffrecord.fileio import FileReader
+from ffrecord import FileReader
 
 ################################################################################
 # public methods and classes
@@ -58,23 +58,19 @@ class Dataset(TorchDataset):
     samples = dataset[indexes]
     ```
     """
-    def __init__(self, fname: str, check_data: bool = True):
+    def __init__(self, fnames: Union[str, List, Tuple], check_data: bool = True):
         """
         Args:
-            fname:      FFrecord file name
+            fnames:     FFrecord file names
             check_data: validate checksum or not
         """
-        self.fname = fname
-        self.reader = FileReader(fname, check_data)
+        self.fnames = fnames
+        self.reader = FileReader(fnames, check_data)
 
     def __len__(self):
         return self.reader.n
 
     def __getitem__(self, indexes):
-        if self.reader is None:
-            raise ValueError(
-                "reader is not created yet. Please call open() to create a reader"
-            )
         if not isinstance(indexes, (list, tuple)):
             raise TypeError("indexes must be a list of index")
 

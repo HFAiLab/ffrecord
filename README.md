@@ -33,7 +33,6 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 - OS: Linux
 - Python >= 3.6
 - Pytorch >= 1.6
-- [libaio 0.8.3](https://pypi.org/project/libaio/)
 - NumPy
 
 ### Install
@@ -102,7 +101,7 @@ reader = FileReader(fname, check_data=True)
 print(f'Number of samples: {reader.n}')
 
 indices = [3, 6, 0, 10]      # indices of each sample
-data = reader.read(indices)  # return a list of bytes data
+data = reader.read(indices)  # return a list of bytes-like data
 
 for i in range(n):
     sample = deserialize(data[i])

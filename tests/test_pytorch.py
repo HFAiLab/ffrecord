@@ -1,18 +1,11 @@
 import unittest
-import random
 import pickle
 import tempfile
 from pathlib import Path
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-import sys
-
-sys.path.insert(
-    0,
-    "/nfs-jd/prod/nfs1/zsy/pylibs/lib/python3.6/site-packages/ffrecord-1.1.0+e792bf8-py3.6.egg"
-)
-from ffrecord.fileio import FileWriter, FileReader
+from ffrecord import FileWriter, FileReader
 from ffrecord.torch import Dataset as FFDataset, DataLoader as FFDataLoader
 
 
@@ -58,16 +51,16 @@ class TestDataLoader(unittest.TestCase):
             writer.write_one(data)
         writer.close()
         # load dataset
-        aiodataset = DummyFireFlyerDataset(file)
-        aiodataloader = FFDataLoader(
-            aiodataset,
+        ffdataset = DummyFireFlyerDataset(file)
+        ffdataloader = FFDataLoader(
+            ffdataset,
             batch_size=8,
             shuffle=False,
             num_workers=num_workers,
         )
 
-        assert len(dataloader) == len(aiodataloader)
-        for batch1, batch2 in zip(dataloader, aiodataloader):
+        assert len(dataloader) == len(ffdataloader)
+        for batch1, batch2 in zip(dataloader, ffdataloader):
             print(batch1[0], batch2[0])
             assert torch.equal(batch1[0], batch2[0])
             assert torch.equal(batch1[1], batch2[1])

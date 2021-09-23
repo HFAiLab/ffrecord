@@ -1,4 +1,4 @@
-from .fileio import (
+from _ffrecord_cpp import (
     FileReader,
     FileWriter,
     checkFsAlign,
