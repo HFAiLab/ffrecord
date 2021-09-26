@@ -33,7 +33,9 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 - OS: Linux
 - Python >= 3.6
 - Pytorch >= 1.6
+- [libaio 0.8.3](https://pypi.org/project/libaio/)
 - NumPy
+- zlib: `sudo apt-get install zliblg-dev`
 
 ### Install
 

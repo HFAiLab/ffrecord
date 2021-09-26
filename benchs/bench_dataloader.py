@@ -7,12 +7,11 @@ import pickle
 from pathlib import Path
 import torch
 import torchvision
+import matplotlib.pyplot as plt
 from torch import nn
 from torchvision import datasets, transforms
 
 from ffrecord.torch import Dataset, DataLoader
-
-import matplotlib.pyplot as plt
 
 
 class FireFlyerImageNet(Dataset):
@@ -34,15 +33,15 @@ class FireFlyerImageNet(Dataset):
 
 
 transform = transforms.Compose([
-    transforms.RandomResizedCrop(224),
-    transforms.RandomHorizontalFlip(),
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225])
 ])
 
 
-def bench_speed(dataloader):
+def bench_speed(dataloader, name, bs):
     it = iter(dataloader)
     next(it)
 
@@ -54,7 +53,7 @@ def bench_speed(dataloader):
     t1 = time.time()
 
     t = (t1 - t0) / num_batches
-    print(f'{t} s per batch')
+    print(f'batch size {bs}, {name}: {t} s per batch')
     return t
 
 
@@ -75,8 +74,8 @@ def bench(batch_size):
                                                num_workers=num_workers,
                                                pin_memory=True)
 
-    t0 = bench_speed(ffdataloader)
-    t1 = bench_speed(torchdataloader)
+    t0 = bench_speed(ffdataloader, 'FFRecord', batch_size)
+    t1 = bench_speed(torchdataloader, 'PyTorch', batch_size)
     return t0, t1
 
 

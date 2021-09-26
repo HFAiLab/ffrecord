@@ -21,7 +21,7 @@ ext_modules = [
         include_dirs=['ffrecord/src'],
         language='c++',
         extra_compile_args=extra_compile_args,
-        libraries=['aio'],
+        libraries=['aio', 'z'],
     ),
 ]
 
@@ -32,7 +32,7 @@ setup(cmdclass={"build_py": build_py},
       author='HFAiLab',
       license='MIT',
       python_requires='>=3.6',
-      install_requires=['torch>=1.6'],
+      install_requires=['libaio', 'torch>=1.6'],
       packages=['ffrecord', 'ffrecord/torch'],
       ext_modules=ext_modules
 )

@@ -6,4 +6,4 @@ dist/
 *.egg-info/
 *.ffr
 benchs/bench.py
-
+*.png

@@ -9,6 +9,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <libaio.h>
+
 
 /****************************************************
 
@@ -156,6 +158,8 @@ class FileReader {
     int64_t n;
 
   private:
+
+    io_context_t *pctx = nullptr;
 
     inline void validate_sample(int64_t index, uint8_t *buf, int64_t len, uint32_t checksum);
 

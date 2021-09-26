@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: '3.6'
       - name: Install packages
-        run: pip install numpy torch
+        run: pip install numpy torch libaio
       - name: Build
         run: python setup.py build
       - name: test

@@ -29,6 +29,34 @@ constexpr int MAX_EVENTS = 4096;
 constexpr int MIN_NR = 1;
 
 
+std::string format_msg(const std::string &msg, const std::string &func,
+        const std::string &file, int line) {
+    std::string out = msg;
+    out.back() = ' ';
+    out += ", Error in " + func + " at " + file + " line " + std::to_string(line);
+    return out;
+}
+
+
+#define FFRECORD_THROW_FMT(FMT, ...)                           \
+    do {                                                       \
+        std::string __s;                                       \
+        int __size = snprintf(nullptr, 0, FMT, __VA_ARGS__);   \
+        __s.resize(__size + 1);                                \
+        snprintf(&__s[0], __s.size(), FMT, __VA_ARGS__);       \
+        throw std::runtime_error(format_msg(                   \
+            __s, __PRETTY_FUNCTION__, __FILE__, __LINE__));    \
+    } while (false)
+
+
+#define FFRECORD_ASSERT(X, FMT, ...)                                         \
+    do {                                                                     \
+        if (!(X)) {                                                          \
+            FFRECORD_THROW_FMT("Error: '%s' failed: " FMT, #X, __VA_ARGS__); \
+        }                                                                    \
+    } while (false)
+
+
 namespace ffrecord {
 
 bool checkFsAlign(int fd) {
@@ -94,9 +122,8 @@ void FileHeader::validate() const {
     checksum = crc32(checksum, (const byte*)checksums.data(), sizeof(checksums[0]) * n);
     checksum = crc32(checksum, (const byte*)offsets.data(), sizeof(offsets[0]) * n);
 
-    if (checksum != checksum_meta) {
-        throw std::runtime_error(fname + ": checksum of metadata mismached!");
-    }
+    FFRECORD_ASSERT(checksum == checksum_meta,
+            "%s: checksum of metadata mismached!", fname.data());
 }
 
 void FileHeader::access(int64_t index, int *pfd, int64_t *offset, int64_t *len,
@@ -129,6 +156,10 @@ FileReader::FileReader(const std::string &fname, bool check_data)
 
 FileReader::~FileReader() {
     close_fd();
+    if (pctx != nullptr) {
+        io_destroy(*pctx);
+        delete pctx;
+    }
 }
 
 void FileReader::close_fd() {
@@ -147,27 +178,32 @@ void FileReader::validate_sample(int64_t index, uint8_t *buf, int64_t len, uint3
     // crc
     if (check_data) {
         uint32_t checksum2 = crc32(0, (const byte*)buf, len);
-        if (checksum2 != checksum) {
-
-            auto msg = "sample " + std::to_string(index) + ": checksum mismached!";
-            throw std::runtime_error(msg);
-        }
+        FFRECORD_ASSERT(checksum2 == checksum,
+                "sample %zd: checksum mismached!", size_t(index));
     }
 }
 
 std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &indices) {
     if (indices.empty()) {
         return {};
+    } else if (indices.size() < 3) {
+        std::vector<py::array> results;
+        for (auto index : indices) {
+            results.push_back(read_one(index));
+        }
+        return results;
     }
     assert(indices.size() <= MAX_EVENTS);
 
-    io_context_t ctx;
-    memset(&ctx, 0, sizeof(ctx));
-    io_setup(MAX_EVENTS, &ctx);
+    if (pctx == nullptr) {
+        pctx = new io_context_t;
+        memset(pctx, 0, sizeof(*pctx));
+        io_setup(MAX_EVENTS, pctx);
+    }
+    auto &ctx = *pctx;
 
     int nr = indices.size();
     std::vector<iocb *> ios(nr);
-    std::unordered_map<iocb *, int> iocb_to_index;
 
     int aiofd;
     int64_t offset, len;
@@ -188,7 +224,7 @@ std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &
         uint8_t *buf = new uint8_t[len];
         ios[i] = new iocb();
         io_prep_pread(ios[i], aiofd, buf, len, offset);
-        iocb_to_index[ios[i]] = i;
+        ios[i]->data = (void *)(int64_t)i;
     }
 
     int min_nr = MIN_NR;
@@ -218,7 +254,7 @@ std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &
             auto obj = events[i].obj;
             auto buf = (uint8_t *)(obj->u.c.buf);
             auto len = obj->u.c.nbytes;
-            auto idx = iocb_to_index[obj];
+            int64_t idx = (int64_t)obj->data;
 
             validate_sample(indices[idx], buf, len, checksums[idx]);
             auto capsule = py::capsule(buf, free_buffer);
@@ -229,7 +265,6 @@ std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &
         }
     }
 
-    io_destroy(ctx);
     return results;
 }
 
