@@ -1,23 +1,67 @@
+import sys
 import time
-import unittest
-import random
-import tempfile
 from pathlib import Path
 import matplotlib.pyplot as plt
+import multiprocessing as mp
+from multiprocessing import Process
 
 from ffrecord import FileWriter, FileReader
-from ffrecord.fileio import (
-    FileWriter as FFFileWriter,
-    FileReader as FFFileReader,
-)
-
-data = bytearray([i % 256 for i in range(1000)])
-tmp_dir = '/private_dataset'
+from ffrecord.fileio import FileReader as PyFileReader
 
 
-def bench_cpp(n, bs):
-    with tempfile.NamedTemporaryFile(dir=tmp_dir) as tmp:
-        writer = FileWriter(tmp.name, n)
+def read_chunk(reader, q):
+    t0 = time.time()
+    while True:
+        r = q.get()
+        if r is None:
+            break
+
+        i0, xn = r
+        indexes = list(range(i0, i0 + xn))
+        bytes_ = reader.read(indexes)
+    t_read = time.time() - t0
+    reader.close()
+
+    return t_read
+
+
+def bench_read(implem, Reader, fname, n, bs, nprocs):
+    reader = Reader(fname)
+
+    q = mp.Queue()
+    for i0 in range(0, n, bs):
+        ni = min(bs, n - i0)
+        q.put([i0, ni])
+
+    # use None as sentinel
+    for i in range(nprocs):
+        q.put(None)
+
+    t0 = time.time()
+    procs = []
+    for i in range(nprocs):
+        p = Process(target=read_chunk, args=(reader, q))
+        p.start()
+        procs.append(p)
+    for i in range(nprocs):
+        procs[i].join()
+
+    t_read = time.time() - t0
+    print(f'{implem} read: {t_read}')
+
+    return t_read
+
+
+def main():
+    sample_size = 1 * (1 << 20)
+    data = bytearray([i % 256 for i in range(sample_size)])
+    tmp_dir = '/private_dataset'
+    nprocs = 128
+    n = 100000
+    fname = tmp_dir + f'/test_ss_{sample_size}'
+
+    if not Path(fname).exists():
+        writer = FileWriter(fname, n)
 
         t0 = time.time()
         for i in range(n):
@@ -26,69 +70,23 @@ def bench_cpp(n, bs):
         writer.close()
         print('cpp write: ', t_write)
 
-        reader = FileReader(tmp.name)
-        t0 = time.time()
-        for i0 in range(0, n, bs):
-            xn = min(bs, n - i0)
-            indexes = list(range(i0, i0 + xn))
-            reader.read(indexes)
-        t_read = time.time() - t0
-        reader.close()
-        print('cpp read: ', t_read)
-
-        return t_write, t_read
-
-def bench_python(n, bs):
-    with tempfile.NamedTemporaryFile(dir=tmp_dir) as tmp:
-        writer = FFFileWriter(tmp.name, n)
-
-        t0 = time.time()
-        for i in range(n):
-            writer.write_one(data)
-        t_write = time.time() - t0
-        writer.close()
-        print('python write: ', t_write)
-
-        reader = FFFileReader(tmp.name)
-        t0 = time.time()
-        for i0 in range(0, n, bs):
-            xn = min(bs, n - i0)
-            indexes = list(range(i0, i0 + xn))
-            reader.read(indexes)
-        t_read = time.time() - t0
-        reader.close()
-        print('python read: ', t_read)
-
-        return t_write, t_read
-
-
-def main():
     n = 100000
-    batch_sizes = [1, 2, 4, 8, 16, 32, 64]
-    size = n * len(data) / (1 << 20)
+    size = n * len(data) / (1 << 30)
+    print(f'Reading {size} GB from {fname}')
+    batch_sizes = [64, 80, 96, 112, 128]
 
     t_cpp, t_python = [], []
     for bs in batch_sizes:
-        t_cpp.append(bench_cpp(n, bs))
-        t_python.append(bench_python(n, bs))
+        t_python.append(bench_read('python', PyFileReader, fname, n, bs, nprocs))
+        t_cpp.append(bench_read('cpp', FileReader, fname, n, bs, nprocs))
 
-    write_cpp = sum([size / a for a, b in t_cpp]) / len(t_cpp)
-    write_python = sum([size / a for a, b in t_python]) / len(t_python)
-    plt.bar(1.0, write_cpp, label='C++ write')
-    plt.bar(2.0, write_python, label='Python write')
-    plt.title('Write')
-    plt.ylabel('MB/s')
-    plt.legend()
-    plt.savefig('bench_write.png')
-
-    plt.clf()
-    plt.plot(batch_sizes, [size / b for a, b in t_cpp], label='C++ read')
-    plt.plot(batch_sizes, [size / b for a, b in t_python], label='Python read')
-    plt.title('Read')
+    plt.plot(batch_sizes, [size / b for b in t_cpp], label='C++ read')
+    plt.plot(batch_sizes, [size / b for b in t_python], label='Python read')
+    plt.title(f'Read, nprocs {nprocs}, sample_size {sample_size}')
     plt.xlabel('batch size')
-    plt.ylabel('MB/s')
+    plt.ylabel('GB/s')
     plt.legend()
-    plt.savefig('bench_read.png')
+    plt.savefig(f'bench_read_mp_{nprocs}_{sample_size}.png')
 
 
 if __name__ == '__main__':

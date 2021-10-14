@@ -1,21 +1,19 @@
-#include <fileio.h>
 
 #include <cassert>
 #include <cstdio>
 #include <cstdint>
+#include <cinttypes>
 #include <string>
 #include <vector>
 
 #include <fcntl.h>
 #include <unistd.h>
-#include "zlib.h"
 
-namespace py = pybind11;
+#include <fileio.h>
+#include <utils.h>
+
 
 namespace ffrecord {
-
-using byte = unsigned char;
-
 
 FileWriter::FileWriter(const std::string &fname, int64_t n) : n(n), count(0) {
     fd = open(fname.data(), O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
@@ -28,16 +26,17 @@ FileWriter::FileWriter(const std::string &fname, int64_t n) : n(n), count(0) {
 
 FileWriter::~FileWriter() { close_fd(); }
 
-void FileWriter::write_one(const pybind11::buffer &buf) {
-    py::buffer_info info = buf.request();
-
-    auto data = (const byte*)info.ptr;
-    auto len = info.shape[0];
-
-    checksums[count] = crc32(0, data, len);
+void FileWriter::write_one(const uint8_t *data, int64_t len) {
+    checksums[count] = ffcrc32(0, data, len);
     offsets[count] = sample_pos;
 
-    write(fd, data, len);
+    for (int64_t start = 0; start < len; start += MAX_SIZE) {
+        int64_t len_i = std::min(MAX_SIZE, len - start);
+        int64_t res = write(fd, data + start, len_i);
+        FFRECORD_ASSERT(res == len_i,
+                "Sample %" PRId64 ": length %" PRId64 " but wrote %" PRId64 " bytes",
+                count, len_i, res);
+    }
     sample_pos += len;
     count += 1;
 }
@@ -57,9 +56,9 @@ void FileWriter::finish() {
     write(fd, offsets.data(), sizeof(offsets[0]) * n);
 
     // checksum of metadata
-    checksum = crc32(checksum, (const byte*)&n, sizeof(n));
-    checksum = crc32(checksum, (const byte*)checksums.data(), sizeof(checksums[0]) * n);
-    checksum = crc32(checksum, (const byte*)offsets.data(), sizeof(offsets[0]) * n);
+    checksum = ffcrc32(checksum, &n, sizeof(n));
+    checksum = ffcrc32(checksum, checksums.data(), sizeof(checksums[0]) * n);
+    checksum = ffcrc32(checksum, offsets.data(), sizeof(offsets[0]) * n);
     pwrite(fd, &checksum, sizeof(uint32_t), 0);
 
     close(fd);

@@ -6,10 +6,8 @@
 #include <string>
 #include <vector>
 
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-
 #include <libaio.h>
+#include <zlib.h>
 
 
 /****************************************************
@@ -36,9 +34,6 @@ Fields:
 
 namespace ffrecord {
 
-bool checkFsAlign(int fd);
-
-
 class FileWriter {
 
   public:
@@ -54,14 +49,16 @@ class FileWriter {
 
     /** Write one sample
      *
-     * @param buf binary data of one sample
+     * @param data input data
+     * @param len  data length in bytes
      */
-    void write_one(const pybind11::buffer &buf);
+    // void write_one(const pybind11::buffer &buf);
+    void write_one(const uint8_t *data, int64_t len);
 
     ///< Close opened file
     void close_fd();
 
-  private:
+  protected:
 
     void finish();
 
@@ -75,8 +72,8 @@ class FileWriter {
 };
 
 
-class FileHeader {
-  public:
+struct FileHeader {
+
     /** Open a file and read header from it
      *
      * @param fname       opened file name
@@ -106,7 +103,6 @@ class FileHeader {
     ///< number of samples
     int64_t n;
 
-  private:
     std::string fname;
     int fd;
     int aiofd;
@@ -115,6 +111,17 @@ class FileHeader {
     std::vector<int64_t> offsets;
     std::vector<uint32_t> checksums;
 };
+
+
+struct MemBlock {
+    MemBlock() = default;
+
+    MemBlock(uint8_t *data, int64_t len) : data(data), len(len) {}
+
+    uint8_t *data;
+    int64_t len;
+};
+
 
 class FileReader {
 
@@ -143,13 +150,13 @@ class FileReader {
      *
      * @param indices  index of each sample
      */
-    std::vector<pybind11::array> read_batch(const std::vector<int64_t> &indices);
+    std::vector<MemBlock> read_batch(const std::vector<int64_t> &indices);
 
     /** Read one sample
      *
      * @param index  index of one sample
      */
-    pybind11::array read_one(int64_t index);
+    MemBlock read_one(int64_t index);
 
     ///< Close opened file
     void close_fd();
@@ -157,7 +164,7 @@ class FileReader {
     ///< number of samples
     int64_t n;
 
-  private:
+  protected:
 
     io_context_t *pctx = nullptr;
 
@@ -168,6 +175,5 @@ class FileReader {
     std::vector<FileHeader> headers;
     std::vector<int64_t> nsamples;
 };
-
 
 }  // ffrecord

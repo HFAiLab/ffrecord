@@ -1,75 +1,27 @@
-#include <fileio.h>
 
 #include <cassert>
 #include <cstdio>
 #include <cstdint>
+#include <cinttypes>
 #include <string>
 #include <vector>
-#include <stdexcept>
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <libaio.h>
 #include <errno.h>
 
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-
-#include "zlib.h"
+#include <fileio.h>
+#include <utils.h>
 
 
-namespace py = pybind11;
-using byte = unsigned char;
-
-constexpr unsigned long FS_IOCNUM_CHECK_FS_ALIGN = 2147772004;
 constexpr int MAX_EVENTS = 4096;
 constexpr int MIN_NR = 1;
 
 
-std::string format_msg(const std::string &msg, const std::string &func,
-        const std::string &file, int line) {
-    std::string out = msg;
-    out.back() = ' ';
-    out += ", Error in " + func + " at " + file + " line " + std::to_string(line);
-    return out;
-}
-
-
-#define FFRECORD_THROW_FMT(FMT, ...)                           \
-    do {                                                       \
-        std::string __s;                                       \
-        int __size = snprintf(nullptr, 0, FMT, __VA_ARGS__);   \
-        __s.resize(__size + 1);                                \
-        snprintf(&__s[0], __s.size(), FMT, __VA_ARGS__);       \
-        throw std::runtime_error(format_msg(                   \
-            __s, __PRETTY_FUNCTION__, __FILE__, __LINE__));    \
-    } while (false)
-
-
-#define FFRECORD_ASSERT(X, FMT, ...)                                         \
-    do {                                                                     \
-        if (!(X)) {                                                          \
-            FFRECORD_THROW_FMT("Error: '%s' failed: " FMT, #X, __VA_ARGS__); \
-        }                                                                    \
-    } while (false)
-
-
 namespace ffrecord {
-
-bool checkFsAlign(int fd) {
-    uint32_t buf;
-    int ret = ioctl(fd, FS_IOCNUM_CHECK_FS_ALIGN, &buf);
-    return ret == 0 && buf == 1;
-}
-
-
-void free_buffer(void *buf) {
-    delete[] reinterpret_cast<uint8_t*>(buf);
-}
-
 
 /***************************************************
  * FileHeader
@@ -118,9 +70,9 @@ void FileHeader::close_fd() {
 
 void FileHeader::validate() const {
     uint32_t checksum = 0;
-    checksum = crc32(checksum, (const byte*)&n, sizeof(n));
-    checksum = crc32(checksum, (const byte*)checksums.data(), sizeof(checksums[0]) * n);
-    checksum = crc32(checksum, (const byte*)offsets.data(), sizeof(offsets[0]) * n);
+    checksum = ffcrc32(checksum, &n, sizeof(n));
+    checksum = ffcrc32(checksum, checksums.data(), sizeof(checksums[0]) * n);
+    checksum = ffcrc32(checksum, offsets.data(), sizeof(offsets[0]) * n);
 
     FFRECORD_ASSERT(checksum == checksum_meta,
             "%s: checksum of metadata mismached!", fname.data());
@@ -177,17 +129,17 @@ void FileReader::validate() {
 void FileReader::validate_sample(int64_t index, uint8_t *buf, int64_t len, uint32_t checksum) {
     // crc
     if (check_data) {
-        uint32_t checksum2 = crc32(0, (const byte*)buf, len);
+        uint32_t checksum2 = ffcrc32(0, buf, len);
         FFRECORD_ASSERT(checksum2 == checksum,
-                "sample %zd: checksum mismached!", size_t(index));
+                "Sample %" PRId64 ": checksum mismached!", index);
     }
 }
 
-std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &indices) {
+std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices) {
     if (indices.empty()) {
         return {};
     } else if (indices.size() < 3) {
-        std::vector<py::array> results;
+        std::vector<MemBlock> results;
         for (auto index : indices) {
             results.push_back(read_one(index));
         }
@@ -202,12 +154,15 @@ std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &
     }
     auto &ctx = *pctx;
 
-    int nr = indices.size();
-    std::vector<iocb *> ios(nr);
+    int nr = indices.size();  // number of reads
+    std::vector<iocb *> ios;
+    ios.reserve(nr);
 
     int aiofd;
     int64_t offset, len;
-    std::vector<uint32_t> checksums(nr);
+    std::vector<uint32_t> checksums(nr);  // checksum of each sample
+    std::vector<int> nblocks(nr, 0);      // number of blocks for each sample
+    std::vector<MemBlock> buffers(nr);    // results to be returned
 
     // prepare iocbs
     for (int i = 0; i < nr; i++) {
@@ -221,24 +176,34 @@ std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &
         index = index - nsamples[fid];
         headers[fid].access(index, &aiofd, &offset, &len, &checksums[i], true);
 
-        uint8_t *buf = new uint8_t[len];
-        ios[i] = new iocb();
-        io_prep_pread(ios[i], aiofd, buf, len, offset);
-        ios[i]->data = (void *)(int64_t)i;
+        // allocate memory
+        auto &buf = buffers[i];
+        buf.data = new uint8_t[len];
+        buf.len = len;
+
+        // split data into multiple blocks if too large
+        for (int64_t start = 0; start < len; start += MAX_SIZE) {
+            int64_t len_i = std::min(MAX_SIZE, len - start);
+            ios.push_back(new iocb());
+            io_prep_pread(ios.back(), aiofd, buf.data + start, len_i, offset + start);
+            ios.back()->data = (void *)(int64_t)i;
+            nblocks[i] += 1;
+        }
     }
 
     int min_nr = MIN_NR;
-    int nr_completed = 0;
-    int nr_submitted = 0;
-    std::vector<io_event> events(nr);
-    std::vector<py::array> results(nr);
+    int nr_completed = 0;  // number of requests completed
+    int nr_submitted = 0;  // number of requests submitted
+    std::vector<io_event> events(ios.size());
+    std::vector<int> nblocks_completed(nr, 0);
+    nr = ios.size();  // number of requests in total
 
     // submit & wait
     while (nr_completed < nr) {
 
         // submit jobs
         if (nr_submitted < nr) {
-            int ns = io_submit(ctx, nr, &ios[nr_submitted]);
+            int ns = io_submit(ctx, nr - nr_submitted, &ios[nr_submitted]);
             assert(ns > 0);
             nr_submitted += ns;
         }
@@ -252,23 +217,26 @@ std::vector<pybind11::array> FileReader::read_batch(const std::vector<int64_t> &
         // postprocess
         for (int i = 0; i < ne; i++) {
             auto obj = events[i].obj;
-            auto buf = (uint8_t *)(obj->u.c.buf);
             auto len = obj->u.c.nbytes;
             int64_t idx = (int64_t)obj->data;
 
-            validate_sample(indices[idx], buf, len, checksums[idx]);
-            auto capsule = py::capsule(buf, free_buffer);
-            auto arr = py::array(len, buf, capsule);
-            results[idx] = arr;
+            FFRECORD_ASSERT(events[i].res == len,
+                    "Sample %" PRId64 ": length %lu but read %lu bytes",
+                    indices[idx], len, events[i].res);
+
+            nblocks_completed[idx] += 1;
+            if (nblocks_completed[idx] == nblocks[idx]) {
+                validate_sample(indices[idx], buffers[idx].data, buffers[idx].len, checksums[idx]);
+            }
 
             delete obj;
         }
     }
 
-    return results;
+    return buffers;
 }
 
-py::array FileReader::read_one(int64_t index) {
+MemBlock FileReader::read_one(int64_t index) {
     int fd;
     int64_t offset, len;
     int fid = 0;
@@ -281,12 +249,16 @@ py::array FileReader::read_one(int64_t index) {
     headers[fid].access(index - nsamples[fid], &fd, &offset, &len, &checksum, false);
 
     uint8_t *buf = new uint8_t[len];
-    pread(fd, buf, len, offset);
+    for (int64_t start = 0; start < len; start += MAX_SIZE) {
+        int64_t len_i = std::min(MAX_SIZE, len - start);
+        int64_t res = pread(fd, buf + start, len_i, offset + start);
+        FFRECORD_ASSERT(res == len_i,
+                "Sample %" PRId64 ": length %" PRId64 " but read %" PRId64 " bytes",
+                index, len_i, res);
+    }
     validate_sample(index, buf, len, checksum);
 
-    auto capsule = py::capsule(buf, free_buffer);
-    return py::array(len, buf, capsule);
+    return MemBlock(buf, len);
 }
-
 
 }  // ffrecord
