@@ -3,6 +3,8 @@ import os
 import pickle
 from typing import Union
 from tqdm import tqdm, trange
+from PIL import Image
+
 import torch
 import torchvision.datasets as datasets
 
@@ -11,7 +13,15 @@ from ffrecord import FileWriter
 
 class DumpDataset(datasets.coco.CocoDetection):
     def __getitem__(self, index):
-        sample = super().__getitem__(index)
+        coco = self.coco
+        img_id = self.ids[index]
+        ann_ids = coco.getAnnIds(imgIds=img_id)
+        target = coco.loadAnns(ann_ids)
+
+        path = coco.loadImgs(img_id)[0]['file_name']
+        img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        sample = (img, target, img_id)
+
         data = pickle.dumps(sample)  # 序列化数据
         return data
 
@@ -62,8 +72,8 @@ def main():
     val_dataset = DumpDataset(
         root=val_dir, annFile=coco_dir + 'annotations/instances_val2017.json')
 
-    convert(train_dataset, out_dir + 'train2017_2.ffr')
-    convert(val_dataset, out_dir + 'val2017_2.ffr')
+    convert(train_dataset, out_dir + 'train2017.ffr')
+    convert(val_dataset, out_dir + 'val2017.ffr')
 
 
 if __name__ == '__main__':

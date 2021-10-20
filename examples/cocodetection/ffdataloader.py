@@ -35,7 +35,7 @@ class CoCoDataset(Dataset):
             # 对字节数据做反序列化
             # image是一个Pillow Image对象
             # anno是一个list，包含一张图片中每个物体的label
-            image, anno = pickle.loads(bytes_)
+            image, anno, img_id = pickle.loads(bytes_)
             if self.transform is not None:
                 # 对图像做变换
                 image = self.transform(image)
