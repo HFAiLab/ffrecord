@@ -69,6 +69,13 @@ void FileHeader::close_fd() {
 }
 
 void FileHeader::validate() const {
+
+    // for barckward compatibility
+    if (checksum_meta == 0) {
+        fprintf(stderr, "warning: you are using an old version ffrecord file, please update the file\n");
+        return;
+    }
+
     uint32_t checksum = 0;
     checksum = ffcrc32(checksum, &n, sizeof(n));
     checksum = ffcrc32(checksum, checksums.data(), sizeof(checksums[0]) * n);
