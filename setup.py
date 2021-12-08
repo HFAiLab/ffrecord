@@ -1,9 +1,9 @@
-import subprocess
-from glob import glob
-from setuptools import setup, Extension
-from setuptools.command.build_py import build_py
 
+import subprocess
+from setuptools import setup
 import sysconfig
+
+from cmake_build import CMakeBuild, CMakeExtension
 
 
 rev = '+' + subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'
@@ -14,18 +14,11 @@ extra_compile_args = sysconfig.get_config_var('CFLAGS').split()
 extra_compile_args += ["-DNDEBUG", "-O3"]
 extra_compile_args += ["-std=c++11", "-Wall", "-Wextra"]
 
-ext_modules = [
-    Extension(
-        "_ffrecord_cpp",
-        sources=sorted(glob("ffrecord/src/*.cpp")),
-        include_dirs=['ffrecord/src'],
-        language='c++',
-        extra_compile_args=extra_compile_args,
-        libraries=['aio', 'z'],
-    ),
-]
 
-setup(cmdclass={"build_py": build_py},
+cpp_module = CMakeExtension(name="_ffrecord_cpp", sourcedir="ffrecord/src")
+
+
+setup(cmdclass={"build_ext": CMakeBuild},
       name='ffrecord',
       version=version,
       keywords='Fileflyer Record file format',
@@ -34,5 +27,5 @@ setup(cmdclass={"build_py": build_py},
       python_requires='>=3.6',
       install_requires=['libaio', 'torch>=1.6'],
       packages=['ffrecord', 'ffrecord/torch'],
-      ext_modules=ext_modules
+      ext_modules=[cpp_module]
 )
