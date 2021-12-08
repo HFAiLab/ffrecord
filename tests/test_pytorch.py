@@ -32,7 +32,7 @@ class DummyFireFlyerDataset(FFDataset):
 
 class TestDataLoader(unittest.TestCase):
     def subtest_dataloader(self, num_workers):
-        _, file = tempfile.mkstemp()
+        _, file = tempfile.mkstemp(suffix='.ffr')
         n = 100
 
         dataset = DummyDataset(n)

@@ -16,7 +16,7 @@ class TestMultiFilesIO(unittest.TestCase):
         files = []
         cnt = 0
         for file_no in range(num_files):
-            _, file = tempfile.mkstemp()
+            _, file = tempfile.mkstemp(suffix='.ffr')
             files.append(file)
 
             writer = FileWriter(file, n)
@@ -46,7 +46,7 @@ class TestMultiFilesIO(unittest.TestCase):
         files = []
         cnt = 0
         for file_no in range(num_files):
-            _, file = tempfile.mkstemp()
+            _, file = tempfile.mkstemp(suffix='.ffr')
             files.append(file)
 
             writer = FileWriter(file, n)
@@ -82,6 +82,44 @@ class TestMultiFilesIO(unittest.TestCase):
         self.subtest_libaio(100, 1)
         self.subtest_libaio(100, 10)
 
+    def test_opendir(self):
+        n, num_files = 1000, 10
+        print("test_opendir", n, num_files)
+
+        files = []
+        cnt = 0
+        dir = 'test_files/'
+        os.makedirs(dir, exist_ok=True)
+        for file_no in range(num_files):
+            file = dir + f'{file_no:05d}.ffr'
+            files.append(file)
+
+            writer = FileWriter(file, n)
+
+            for i in range(n):
+                bytes_ = bytearray([(x**2 % 256) for x in range(cnt + 5)])
+                writer.write_one(bytes_)
+                cnt += 1
+            writer.close()
+
+        reader = FileReader(dir, check_data=True)
+        indexes = list(range(n * num_files))
+        random.shuffle(indexes)
+        batch_size = 10
+        for j in range(n // batch_size):
+            batch_indices = indexes[j * batch_size:(j + 1) * batch_size]
+            results = reader.read(batch_indices)
+            for i in range(batch_size):
+                bytes_ = results[i].tobytes()
+                gt_bytes = bytearray([(x**2 % 256)
+                                      for x in range(batch_indices[i] + 5)])
+                self.assertEqual(bytes_, gt_bytes)
+
+        reader.close()
+        for file in files:
+            Path(file).unlink()
+        Path(dir).rmdir()
+
 
 @unittest.skipIf(os.getenv('DISABLE_TEST_LARGE_SAMPLE'), 'skip TestLargeSample')
 class TestLargeSample(unittest.TestCase):
@@ -89,7 +127,7 @@ class TestLargeSample(unittest.TestCase):
     def test_libaio(self):
         n = 100
         sample_size = 4 * (1 << 30)  # 4GB
-        _, file = tempfile.mkstemp()
+        _, file = tempfile.mkstemp(suffix='.ffr')
 
         writer = FileWriter(file, n)
         for i in range(n):
@@ -115,7 +153,7 @@ class TestLargeSample(unittest.TestCase):
     def test_posix_io(self):
         n = 2
         sample_size = 4 * (1 << 30)  # 4GB
-        _, file = tempfile.mkstemp()
+        _, file = tempfile.mkstemp(suffix='.ffr')
 
         writer = FileWriter(file, n)
         for i in range(n):
