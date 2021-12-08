@@ -7,7 +7,7 @@
 ```
 python imagenet2ffrecord.py
 ```
-生成的FFRecord文件保存在`/private_dataset/ImageNet/train.ffr`和`/private_dataset/ImageNet/val.ffr`
+生成的FFRecord文件保存在`/private_dataset/ImageNet_nfiles/train`和`/private_dataset/ImageNet_nfiles/val`
 
 ## 训练
 
