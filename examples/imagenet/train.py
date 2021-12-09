@@ -98,13 +98,6 @@ def validate(dataloader, model, criterion, epoch, local_rank):
     return correct1.item() / total.item()
 
 
-def glob_and_sort(data_dir):
-    files = list(Path(data_dir).glob('*.ffr'))
-    files.sort()
-    files = [str(x) for x in files]
-    return files
-
-
 def main(local_rank):
     # 超参数设置
     epochs = 100
@@ -116,11 +109,11 @@ def main(local_rank):
     save_path = 'output/resnet'
     Path(save_path).mkdir(exist_ok=True, parents=True)
 
-    # ffrecord 支持一次性打开多个文件，数据的顺序取决于输入文件名的顺序
-    # 比如输入是 [1.ffr, 0.ffr, 2.ffr]，每个文件有100条样本
-    # 生成的FFDataset会有300条样本，其中前100条样本对应着1.ffr
-    train_data = glob_and_sort('/private_dataset/ImageNet/train.ffr')
-    val_data = glob_and_sort('/private_dataset/ImageNet/val.ffr')
+    # ffrecord 支持一次性打开一个文件夹，数据的顺序取决于文件名的顺序
+    # 比如输入的文件夹下有 [0.ffr, 1.ffr, 2.ffr]，每个文件有100条样本
+    # 生成的FFDataset会有300条样本，其中前100条样本对应着0.ffr
+    train_data = '/private_dataset/ImageNet/train.ffr'
+    val_data = '/private_dataset/ImageNet/val.ffr'
 
     # 多机通信
     ip = os.environ['MASTER_IP']
