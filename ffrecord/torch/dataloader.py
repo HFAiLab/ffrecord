@@ -1,15 +1,9 @@
-import os
-import random
-import itertools
 from typing import Union, List, Tuple, Any
 
 import torch
-import torch.multiprocessing as multiprocessing
-from torch._utils import ExceptionWrapper
+import torch.multiprocessing as mp
 import torch.utils.data._utils as _utils
 from torch.utils.data import (
-    Sampler,
-    BatchSampler,
     Dataset as TorchDataset,
     DataLoader as TorchDataLoader,
 )
@@ -22,7 +16,55 @@ from ffrecord import FileReader
 ################################################################################
 
 
-class Dataset(TorchDataset):
+class ReaderResitry():
+
+    def ffreaders(self):
+        readers = []
+        if hasattr(self, "_readers"):
+            readers += list(self._readers.values())
+
+        if hasattr(self, "_resitries"):
+            for r in self._resitries.values():
+                readers += r.ffreaders()
+
+        return readers
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        # we register all FileReader objects
+        if '_readers' not in self.__dict__:
+            self.__dict__['_readers'] = {}
+        if '_resitries' not in self.__dict__:
+            self.__dict__['_resitries'] = {}
+
+        if isinstance(value, FileReader):
+            self._readers[name] = value
+        elif isinstance(value, ReaderResitry):
+            self._resitries[name] = value
+        else:
+            object.__setattr__(self, name, value)
+
+    def __hasattr(self, name):
+        return name in self.__dict__
+
+    def __getattr__(self, name: str) -> None:
+        if '_readers' in self.__dict__ and name in self.__dict__['_readers']:
+            return self.__dict__['_readers'][name]
+
+        if '_resitries' in self.__dict__ and name in self.__dict__['_resitries']:
+            return self.__dict__['_resitries'][name]
+
+        return getattr(self, name)
+
+    def __delattr__(self, name: str) -> None:
+        if name in self._readers:
+            del self._readers[name]
+        if name in self._resitries:
+            del self._resitries[name]
+        else:
+            object.__delattr__(self, name)
+
+
+class Dataset(TorchDataset, ReaderResitry):
     """
     Different from `torch.utils.data.Dataset` which accepts an index as input and returns one sample,
     `ffrecord.torch.Dataset` accepts a batch of indexes as input and returns a batch of samples.
