@@ -8,11 +8,11 @@ from torch.utils.data import Dataset, DataLoader
 from ffrecord import FileWriter, FileReader
 from ffrecord.torch import (
     Dataset as FFDataset,
-    ReaderResitry,
+    ReaderRegistry,
 )
 
 
-class A(ReaderResitry):
+class A(ReaderRegistry):
 
     def __init__(self, file1, file2):
         self.r1 = FileReader(file1)

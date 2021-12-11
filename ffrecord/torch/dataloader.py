@@ -16,7 +16,7 @@ from ffrecord import FileReader
 ################################################################################
 
 
-class ReaderResitry():
+class ReaderRegistry():
 
     def ffreaders(self):
         readers = []
@@ -38,7 +38,7 @@ class ReaderResitry():
 
         if isinstance(value, FileReader):
             self._readers[name] = value
-        elif isinstance(value, ReaderResitry):
+        elif isinstance(value, ReaderRegistry):
             self._resitries[name] = value
         else:
             object.__setattr__(self, name, value)
@@ -64,7 +64,7 @@ class ReaderResitry():
             object.__delattr__(self, name)
 
 
-class Dataset(TorchDataset, ReaderResitry):
+class Dataset(TorchDataset, ReaderRegistry):
     """
     Different from `torch.utils.data.Dataset` which accepts an index as input and returns one sample,
     `ffrecord.torch.Dataset` accepts a batch of indexes as input and returns a batch of samples.
