@@ -11,10 +11,15 @@ class FileReader(_FileReader):
 
     def __init__(self, fname, check_data=True):
         if isinstance(fname, (str, os.PathLike)):
+            fname = str(fname)
             if os.path.isdir(fname):
                 fnames = [str(p) for p in Path(fname).glob('*.ffr')]
                 fnames.sort()
                 fname = fnames
+        elif isinstance(fname, (list, tuple)):
+            fname = [str(i) for i in fname]
+        else:
+            raise TypeError("fname must be str, os.PathLike or list")
 
         super().__init__(fname, check_data)
 

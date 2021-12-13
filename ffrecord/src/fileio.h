@@ -58,13 +58,17 @@ class FileWriter {
     ///< Close opened file
     void close_fd();
 
+    ///< expected total number of samples
+    int64_t n;
+
+    ///< current number of samples
+    int64_t count;
+
   protected:
 
     void finish();
 
     int fd;
-    int64_t n;
-    int64_t count;
     int64_t sample_pos;
     std::vector<int64_t> offsets;
     std::vector<uint32_t> checksums;

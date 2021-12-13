@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -17,6 +18,7 @@ namespace ffrecord {
 
 FileWriter::FileWriter(const std::string &fname, int64_t n) : n(n), count(0) {
     fd = open(fname.data(), O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+    FFRECORD_ASSERT(fd > 0, "Failed to open file %s: %s", fname.data(), strerror(errno));
     offsets.resize(n);
     checksums.resize(n);
 
@@ -27,6 +29,8 @@ FileWriter::FileWriter(const std::string &fname, int64_t n) : n(n), count(0) {
 FileWriter::~FileWriter() { close_fd(); }
 
 void FileWriter::write_one(const uint8_t *data, int64_t len) {
+    FFRECORD_ASSERT(count < n, "Exceed total number of samples: %zd", n);
+
     checksums[count] = ffcrc32(0, data, len);
     offsets[count] = sample_pos;
 
@@ -42,6 +46,7 @@ void FileWriter::write_one(const uint8_t *data, int64_t len) {
 }
 
 void FileWriter::finish() {
+    FFRECORD_ASSERT(count == n, "Number of samples mismatched! Wrote %zd samples but expected %zd", count, n);
     uint32_t checksum = 0;
 
     assert(n == count);

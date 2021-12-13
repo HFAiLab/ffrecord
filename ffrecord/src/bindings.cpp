@@ -71,6 +71,8 @@ PYBIND11_MODULE(_ffrecord_cpp, m) {
 
     py::class_<WriterWrapper>(m, "FileWriter")
         .def(py::init<std::string, int64_t>())
+        .def_readonly("n", &WriterWrapper::n)
+        .def_readonly("count", &WriterWrapper::count)
         .def("write_one", &WriterWrapper::write_one_wrapper)
         .def("close", &WriterWrapper::close_fd);
 

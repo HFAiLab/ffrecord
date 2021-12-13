@@ -30,8 +30,12 @@ namespace ffrecord {
 FileHeader::FileHeader(const std::string &fname, bool check_data) {
     this->fname = fname;
     aiofd = fd = open(fname.data(), O_RDONLY);
+    FFRECORD_ASSERT(fd > 0, "Failed to open file %s: %s", fname.data(), strerror(errno));
     if (checkFsAlign(fd)) {
         aiofd = open(fname.data(), O_RDONLY | O_DIRECT);
+        FFRECORD_ASSERT(aiofd > 0,
+                "Failed to open file with O_DIRECT %s: %s",
+                fname.data(), strerror(errno));
     }
 
     // checksum of metadata, number of samples
