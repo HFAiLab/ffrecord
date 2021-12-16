@@ -8,7 +8,7 @@ from cmake_build import CMakeBuild, CMakeExtension
 
 rev = '+' + subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'
                                      ]).decode('ascii').rstrip()
-version = "1.2.0" + rev
+version = "1.3.0" + rev
 
 extra_compile_args = sysconfig.get_config_var('CFLAGS').split()
 extra_compile_args += ["-DNDEBUG", "-O3"]
