@@ -126,6 +126,7 @@ FileReader::~FileReader() {
 }
 
 void FileReader::close_fd() {
+    is_closed = true;
     for (auto &header : headers) {
         header.close_fd();
     }
@@ -147,6 +148,8 @@ void FileReader::validate_sample(int64_t index, uint8_t *buf, int64_t len, uint3
 }
 
 std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices) {
+    FFRECORD_ASSERT1(!is_closed, "FileReader has been closed.");
+
     if (indices.empty()) {
         return {};
     } else if (indices.size() < 3) {
@@ -248,6 +251,8 @@ std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices
 }
 
 MemBlock FileReader::read_one(int64_t index) {
+    FFRECORD_ASSERT1(!is_closed, "FileReader has been closed.");
+
     int fd;
     int64_t offset, len;
     int fid = 0;

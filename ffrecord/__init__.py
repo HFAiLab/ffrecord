@@ -23,12 +23,29 @@ class FileReader(_FileReader):
 
         super().__init__(fname, check_data)
 
+    def __reduce__(self):
+        return (FileReader, (self.fnames, self.check_data))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
 
 class FileWriter(_FileWriter):
 
     def __init__(self, fname, n):
+        assert isinstance(fname, (str, os.PathLike))
         assert Path(fname).suffix == '.ffr'
+        fname = str(fname)
         super().__init__(fname, n)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 __all__ = ['FileReader', 'FileWriter', 'checkFsAlign']

@@ -83,7 +83,7 @@ class TestMultiFilesIO(unittest.TestCase):
         self.subtest_libaio(100, 10)
 
     def test_opendir(self):
-        n, num_files = 1000, 10
+        n, num_files = 100, 5
         print("test_opendir", n, num_files)
 
         files = []
@@ -119,6 +119,18 @@ class TestMultiFilesIO(unittest.TestCase):
         for file in files:
             Path(file).unlink()
         Path(dir).rmdir()
+
+    def test_pathlike_and_with(self):
+        print('test_pathlike_and_with')
+        _, file = tempfile.mkstemp(suffix='.ffr')
+        with FileWriter(Path(file), 10) as w:
+            for i in range(10):
+                w.write_one(b'12345')
+
+        with FileReader(Path(file)) as r:
+            r.read(list(range(10)))
+
+        Path(file).unlink()
 
 
 @unittest.skipIf(os.getenv('DISABLE_TEST_LARGE_SAMPLE'), 'skip TestLargeSample')

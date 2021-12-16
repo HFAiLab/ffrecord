@@ -43,9 +43,6 @@ class ReaderRegistry():
         else:
             object.__setattr__(self, name, value)
 
-    def __hasattr(self, name):
-        return name in self.__dict__
-
     def __getattr__(self, name: str) -> None:
         if '_readers' in self.__dict__ and name in self.__dict__['_readers']:
             return self.__dict__['_readers'][name]
@@ -53,7 +50,7 @@ class ReaderRegistry():
         if '_resitries' in self.__dict__ and name in self.__dict__['_resitries']:
             return self.__dict__['_resitries'][name]
 
-        return getattr(self, name)
+        return object.__getattribute__(self, name)
 
     def __delattr__(self, name: str) -> None:
         if name in self._readers:

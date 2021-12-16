@@ -112,8 +112,8 @@ def main(local_rank):
     # ffrecord 支持一次性打开一个文件夹，数据的顺序取决于文件名的顺序
     # 比如输入的文件夹下有 [0.ffr, 1.ffr, 2.ffr]，每个文件有100条样本
     # 生成的FFDataset会有300条样本，其中前100条样本对应着0.ffr
-    train_data = '/private_dataset/ImageNet/train.ffr'
-    val_data = '/private_dataset/ImageNet/val.ffr'
+    train_data = '/public_dataset/1/ImageNet/train.ffr'
+    val_data = '/public_dataset/1/ImageNet/val.ffr'
 
     # 多机通信
     ip = os.environ['MASTER_IP']

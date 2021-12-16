@@ -72,7 +72,6 @@ class FileWriter {
     int64_t sample_pos;
     std::vector<int64_t> offsets;
     std::vector<uint32_t> checksums;
-
 };
 
 
@@ -178,6 +177,8 @@ class FileReader {
     int nfiles;
     std::vector<FileHeader> headers;
     std::vector<int64_t> nsamples;
+
+    bool is_closed = false;
 };
 
 }  // ffrecord

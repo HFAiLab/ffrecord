@@ -23,6 +23,7 @@
         }                                                                    \
     } while (false)
 
+#define FFRECORD_ASSERT1(X, MSG) FFRECORD_ASSERT(X, MSG"%s", "")
 
 namespace ffrecord {
 
