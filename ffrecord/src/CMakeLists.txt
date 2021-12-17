@@ -15,5 +15,4 @@ target_include_directories(_ffrecord_cpp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(_ffrecord_cpp PRIVATE aio z)
-target_compile_options(_ffrecord_cpp PRIVATE -Wno-unused-result)
-
+target_compile_options(_ffrecord_cpp PRIVATE -Wall -Wno-unused-result -O3)
