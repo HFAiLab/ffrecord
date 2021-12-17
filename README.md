@@ -41,7 +41,7 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 ### Install
 
 ```
-pip3 install ffrecord
+python3 setup.py install
 ```
 
 ## Usage
