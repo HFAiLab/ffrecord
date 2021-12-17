@@ -16,11 +16,11 @@ cpp_module = CMakeExtension(name="_ffrecord_cpp", sourcedir="ffrecord/src")
 setup(cmdclass={"build_ext": CMakeBuild},
       name='ffrecord',
       version=version,
-      keywords='Fileflyer Record file format',
+      description='Fileflyer Record file format',
       author='HFAiLab',
       license='MIT',
       python_requires='>=3.6',
-      install_requires=['libaio', 'torch>=1.6'],
+      install_requires=['torch>=1.6'],
       packages=['ffrecord', 'ffrecord/torch'],
       ext_modules=[cpp_module]
 )
