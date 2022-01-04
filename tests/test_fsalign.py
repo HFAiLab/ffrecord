@@ -32,7 +32,7 @@ class TestFsAlign(unittest.TestCase):
         assert checkFsAlign(fd) == checkFsAlign2(fd) == is_aligned
 
     def test_fs(self):
-        fname = "/public_dataset/2/VOCtrainval_11-May-2012.tar"
+        fname = "/public_dataset/1/ImageNet/train.ffr/PART_00000.ffr"
         self.subtest_fsalign(fname, True)
 
     def test_tmp(self):
