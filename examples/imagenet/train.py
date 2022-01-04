@@ -44,9 +44,9 @@ class FireFlyerImageNet(Dataset):
 def train(dataloader, model, criterion, optimizer, scheduler, epoch, local_rank,
           start_step, best_acc, save_path):
     model.train()
+
     for step, batch in enumerate(dataloader):
-        if step < start_step:
-            continue
+        step += start_step
 
         samples, labels = [x.cuda(non_blocking=True) for x in batch]
         outputs = model(samples)
@@ -182,7 +182,10 @@ def main(local_rank):
 
     # 训练、验证
     for epoch in range(start_epoch, epochs):
+        # resume from epoch and step
         train_datasampler.set_epoch(epoch)
+        train_dataloader.set_step(start_step)
+
         train(train_dataloader, model, criterion, optimizer, scheduler, epoch, local_rank,
               start_step, best_acc, save_path)
         start_step = 0  # reset

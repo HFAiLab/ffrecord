@@ -1,3 +1,6 @@
+from typing import List, Iterator
+import torch
+from torch.utils.data import Sampler
 import torch.utils.data._utils as _utils
 from torch.utils.data import DataLoader as TorchDataLoader
 from torch.utils.data.dataloader import _DatasetKind
@@ -59,10 +62,39 @@ class DataLoader(TorchDataLoader):
         if isinstance(dataset, Dataset):
             self._dataset_kind = _DatasetKind.SliceMap
 
+        assert self.batch_sampler is not None
+        batch_sampler = SkipableSampler(self.batch_sampler)
+        object.__setattr__(self, 'batch_sampler', batch_sampler)
+
+    def set_step(self, step: int) -> None:
+        assert 0 <= step < len(self.batch_sampler.sampler)
+        self.batch_sampler.set_step(step)
+
 
 ################################################################################
 # private methods and classes
 ################################################################################
+
+class SkipableSampler(Sampler[List[int]]):
+
+    def __init__(self, sampler) -> None:
+        self.sampler = sampler
+        self.step = 0
+
+    def __iter__(self) -> Iterator[List[int]]:
+        for i, index in enumerate(self.sampler):
+            if i < self.step:
+                continue
+            yield index
+
+    def __len__(self) -> int:
+        return self._len()
+
+    def _len(self) -> int:
+        return len(self.sampler) - self.step
+
+    def set_step(self, step: int) -> None:
+        self.step = step
 
 
 class _SliceMapDatasetFetcher(_utils.fetch._BaseDatasetFetcher):
