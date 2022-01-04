@@ -167,13 +167,15 @@ class FileReader {
     ///< number of samples
     int64_t n;
 
+    std::vector<std::string> fnames;
+    bool check_data;
+
   protected:
 
     io_context_t *pctx = nullptr;
 
     inline void validate_sample(int64_t index, uint8_t *buf, int64_t len, uint32_t checksum);
 
-    bool check_data;
     int nfiles;
     std::vector<FileHeader> headers;
     std::vector<int64_t> nsamples;

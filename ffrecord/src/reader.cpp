@@ -101,8 +101,8 @@ void FileHeader::access(int64_t index, int *pfd, int64_t *offset, int64_t *len,
  * FileReader
  **************************************************/
 
-FileReader::FileReader(const std::vector<std::string> &fnames, bool check_data) {
-    this->check_data = check_data;
+FileReader::FileReader(const std::vector<std::string> &fnames, bool check_data)
+        : fnames(fnames), check_data(check_data) {
     nfiles = fnames.size();
     n = 0;
 

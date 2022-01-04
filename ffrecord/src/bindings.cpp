@@ -80,6 +80,8 @@ PYBIND11_MODULE(_ffrecord_cpp, m) {
         .def(py::init<std::vector<std::string>, bool>(), py::arg("fnames"), py::arg("check_data") = true)
         .def(py::init<std::string, bool>(), py::arg("fname"), py::arg("check_data") = true)
         .def_readonly("n", &ReaderWrapper::n)
+        .def_readonly("fnames", &ReaderWrapper::fnames)
+        .def_readonly("check_data", &ReaderWrapper::check_data)
         .def("read", &ReaderWrapper::read_batch_wrapper)
         .def("read_one", &ReaderWrapper::read_one_wrapper)
         .def("validate", &ReaderWrapper::validate)
