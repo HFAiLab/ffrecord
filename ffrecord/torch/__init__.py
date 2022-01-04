@@ -1,8 +1,9 @@
-from .dataloader import (
+from .dataset import (
     Dataset,
-    DataLoader,
     ReaderRegistry,
 )
+from .dataloader import DataLoader
+
 
 __all__ = ['DataLoader', 'Dataset', 'ReaderRegistry']
 

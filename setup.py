@@ -1,7 +1,6 @@
 
 import subprocess
 from setuptools import setup
-import sysconfig
 
 from cmake_build import CMakeBuild, CMakeExtension
 

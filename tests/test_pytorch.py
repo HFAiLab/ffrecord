@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from ffrecord import FileWriter, FileReader
+from ffrecord import FileWriter
 from ffrecord.torch import Dataset as FFDataset, DataLoader as FFDataLoader
 
 

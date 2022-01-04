@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 import numpy as np
 
-from ffrecord import FileWriter, FileReader, checkFsAlign
+from ffrecord import FileWriter, FileReader
 
 
 class TestMultiFilesIO(unittest.TestCase):
