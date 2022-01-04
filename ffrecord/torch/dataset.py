@@ -1,4 +1,6 @@
-from typing import Union, List, Tuple, Any
+import bisect
+from collections import defaultdict
+from typing import Union, List, Tuple, Any, Sequence, Iterable
 from torch.utils.data import Dataset as TorchDataset
 
 from ffrecord import FileReader
@@ -52,15 +54,15 @@ class ReaderRegistry():
 class Dataset(TorchDataset, ReaderRegistry):
     """
     Different from `torch.utils.data.Dataset` which accepts an index as input and returns one sample,
-    `ffrecord.torch.Dataset` accepts a batch of indexes as input and returns a batch of samples.
+    `ffrecord.torch.Dataset` accepts a batch of indices as input and returns a batch of samples.
     One advantage of `ffrecord.torch.Dataset` is that it could read a batch of data at a time using Linux AIO.
 
     We first read a batch of bytes data from FFReocrd file and then pass the bytes data to process()
     function. Users need to inherit from `ffrecord.torch.Dataset` and define their custom process function.
 
     ```
-    Pipline:   indexes ----------------------------> bytes -------------> samples
-                        reader.read(indexes)               process()
+    Pipline:   indices ----------------------------> bytes -------------> samples
+                        reader.read(indices)               process()
     ```
 
     For example:
@@ -71,7 +73,7 @@ class Dataset(TorchDataset, ReaderRegistry):
             super().__init__(fname)
             self.transform = transform
 
-        def process(self, indexes, data):
+        def process(self, indices, data):
             # deserialize data
             samples = [pickle.loads(b) for b in data]
 
@@ -81,8 +83,8 @@ class Dataset(TorchDataset, ReaderRegistry):
             return samples
 
     dataset = CustomDataset('train.ffr')
-    indexes = [3, 4, 1, 0]
-    samples = dataset[indexes]
+    indices = [3, 4, 1, 0]
+    samples = dataset[indices]
     ```
     """
     def __init__(self, fnames: Union[str, List, Tuple], check_data: bool = True):
@@ -97,21 +99,21 @@ class Dataset(TorchDataset, ReaderRegistry):
     def __len__(self):
         return self.reader.n
 
-    def __getitem__(self, indexes):
-        if not isinstance(indexes, (list, tuple)):
-            raise TypeError("indexes must be a list of index")
+    def __getitem__(self, indices):
+        if not isinstance(indices, (list, tuple)):
+            raise TypeError("indices must be a list of index")
 
         # read raw bytes data form the FFRecord file
-        data = self.reader.read(indexes)
+        data = self.reader.read(indices)
 
         # pass the raw bytes data into the user-defined process function
-        return self.process(indexes, data)
+        return self.process(indices, data)
 
-    def process(self, indexes: List[int], data: List[bytearray]) -> List[Any]:
+    def process(self, indices: List[int], data: List[bytearray]) -> List[Any]:
         """ process the raw bytes data
 
         Args:
-            indexes: indexes of each sample in one batch
+            indices: indices of each sample in one batch
             data:    raw bytes of each sample in one batch
 
         Return:
@@ -126,3 +128,90 @@ class Dataset(TorchDataset, ReaderRegistry):
             return TorchDataset.__getattr__(self, name)
         except AttributeError:
             return ReaderRegistry.__getattr__(self, name)
+
+
+class Subset(Dataset):
+    r"""
+    Subset of a dataset at specified indices.
+
+    Args:
+        dataset (Dataset): The whole Dataset
+        indices (sequence): Indices in the whole set selected for subset
+    """
+    dataset: Dataset
+    indices: Sequence[int]
+
+    def __init__(self, dataset: Dataset, indices: Sequence[int]) -> None:
+        self.dataset = dataset
+        self.indices = indices
+
+    def __getitem__(self, indices):
+        indices = [self.indices[idx] for idx in indices]
+        return self.dataset[indices]
+
+    def __len__(self):
+        return len(self.indices)
+
+
+class ConcatDataset(Dataset):
+    r"""Dataset as a concatenation of multiple datasets.
+
+    This class is useful to assemble different existing datasets.
+
+    Args:
+        datasets (sequence): List of datasets to be concatenated
+    """
+    datasets: List[Dataset]
+    cumulative_sizes: List[int]
+
+    @staticmethod
+    def cumsum(sequence):
+        r, s = [], 0
+        for e in sequence:
+            l = len(e)
+            r.append(l + s)
+            s += l
+        return r
+
+    def __init__(self, datasets: Iterable[Dataset]) -> None:
+        self.datasets = list(datasets)
+        assert len(self.datasets) > 0, 'datasets should not be an empty iterable'
+        for d in self.datasets:
+            assert isinstance(d, Dataset)
+        self.cumulative_sizes = self.cumsum(self.datasets)
+
+    def __len__(self):
+        return self.cumulative_sizes[-1]
+
+    def _convert_index(self, idx):
+        if idx < 0:
+            if -idx > len(self):
+                raise ValueError("absolute value of index should not exceed dataset length")
+            idx = len(self) + idx
+        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        if dataset_idx == 0:
+            sample_idx = idx
+        else:
+            sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+        return dataset_idx, sample_idx
+
+    def __getitem__(self, indices):
+        m = defaultdict(list)
+
+        reorder = {}
+        for i, idx in enumerate(indices):
+            dataset_idx, sample_idx = self._convert_index(idx)
+            m[dataset_idx].append(sample_idx)
+
+            reorder[(dataset_idx, sample_idx)] = i
+
+        samples = [0] * len(indices)
+        for dataset_idx, sample_indices in sorted(m.items()):
+            data = self.datasets[dataset_idx][sample_indices]
+
+            # reorder
+            for i, sid in enumerate(sample_indices):
+                idx = reorder[(dataset_idx, sid)]
+                samples[idx] = data[i]
+
+        return samples

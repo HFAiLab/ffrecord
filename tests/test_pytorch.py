@@ -2,11 +2,17 @@ import unittest
 import pickle
 import tempfile
 from pathlib import Path
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
 from ffrecord import FileWriter
-from ffrecord.torch import Dataset as FFDataset, DataLoader as FFDataLoader
+from ffrecord.torch import (
+    ConcatDataset,
+    Dataset as FFDataset,
+    DataLoader as FFDataLoader,
+    Subset,
+)
 
 
 class DummyDataset(Dataset):
@@ -138,6 +144,74 @@ class TestDataLoader(unittest.TestCase):
             for num_workers in 0, 4:
                 for batch_size in 1, 4:
                     self.subtest_set_step(shuffle, num_workers, batch_size)
+
+
+class DummyFFDataset(FFDataset):
+    def process(self, indexes, data):
+        return data
+
+
+class TestDataset(unittest.TestCase):
+    def test_concatdataset(self):
+        print('test_concatdataset')
+        _, file1 = tempfile.mkstemp(suffix='.ffr')
+        _, file2 = tempfile.mkstemp(suffix='.ffr')
+        n = 100
+
+        # dump dataset
+        writer = FileWriter(file1, n)
+        for i in range(n):
+            data = bytearray([i % 256])
+            writer.write_one(data)
+        writer.close()
+
+        writer = FileWriter(file2, n)
+        for i in range(n):
+            data = bytearray([(i * 2) % 256])
+            writer.write_one(data)
+        writer.close()
+
+        ds1 = DummyFFDataset(file1, True)
+        ds2 = DummyFFDataset(file2, True)
+
+        ds = ConcatDataset([ds1, ds2])
+        assert len(ds) == len(ds1) + len(ds2)
+
+        indices = list(range(len(ds)))
+        data1 = ds[indices]
+
+        for i in range(len(ds)):
+            a = data1[i]
+            b = ds1[[i]] if i < len(ds1) else ds2[[i - len(ds1)]]
+            assert a == b
+
+        Path(file1).unlink()
+        Path(file2).unlink()
+
+    def test_subset(self):
+        print('test_subset')
+        _, file = tempfile.mkstemp(suffix='.ffr')
+        n = 100
+
+        # dump dataset
+        writer = FileWriter(file, n)
+        for i in range(n):
+            data = bytearray([i % 256])
+            writer.write_one(data)
+        writer.close()
+
+        fullds = DummyFFDataset(file, True)
+
+        indices = np.random.choice(n, n // 2)
+        ds = Subset(fullds, indices)
+        assert len(ds) == len(indices)
+
+        for i in range(len(ds)):
+            a = ds[[i]]
+            b = fullds[[indices[i]]]
+            assert a == b
+
+        Path(file).unlink()
 
 
 if __name__ == '__main__':
