@@ -149,6 +149,12 @@ void FileReader::validate_sample(int64_t index, uint8_t *buf, int64_t len, uint3
 
 std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices) {
     FFRECORD_ASSERT1(!is_closed, "FileReader has been closed.");
+    FFRECORD_ASSERT(indices.size() <= MAX_EVENTS,
+            "batch size > MAX_EVENTS (%zd >= %d)",
+            indices.size(), MAX_EVENTS);
+    for (auto index : indices) {
+        FFRECORD_ASSERT(index < n, "index >= number of samples (%zd >= %zd)", index, n);
+    }
 
     if (indices.empty()) {
         return {};
@@ -159,7 +165,6 @@ std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices
         }
         return results;
     }
-    assert(indices.size() <= MAX_EVENTS);
 
     if (pctx == nullptr) {
         pctx = new io_context_t;
@@ -185,7 +190,6 @@ std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices
         while (index >= nsamples[fid + 1]) {
             fid++;
         }
-        assert(fid < nfiles);
 
         index = index - nsamples[fid];
         headers[fid].access(index, &aiofd, &offset, &len, &checksums[i], true);
@@ -218,14 +222,14 @@ std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices
         // submit jobs
         if (nr_submitted < nr) {
             int ns = io_submit(ctx, nr - nr_submitted, &ios[nr_submitted]);
-            assert(ns > 0);
+            FFRECORD_ASSERT(ns > 0, "Number of submitted requests: %d", ns);
             nr_submitted += ns;
         }
 
         // wait until min_nr jobs are completed
         min_nr = std::min(min_nr, nr_submitted - nr_completed);
         int ne = io_getevents(ctx, min_nr, nr_submitted, events.data(), nullptr);
-        assert(ne > 0);
+        FFRECORD_ASSERT(ne > 0, "Number of events we get: %d", ne);
         nr_completed += ne;
 
         // postprocess
@@ -252,6 +256,7 @@ std::vector<MemBlock> FileReader::read_batch(const std::vector<int64_t> &indices
 
 MemBlock FileReader::read_one(int64_t index) {
     FFRECORD_ASSERT1(!is_closed, "FileReader has been closed.");
+    FFRECORD_ASSERT(index < n, "index >= number of samples (%zd >= %zd)", index, n);
 
     int fd;
     int64_t offset, len;
