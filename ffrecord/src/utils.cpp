@@ -28,8 +28,8 @@ uint32_t ffcrc32(uint32_t code, const void *data, int64_t len) {
 std::string format_msg(const std::string &msg, const std::string &func,
         const std::string &file, int line) {
     std::string out = msg;
-    out.back() = ' ';
-    out += ", Error in " + func + " at " + file + " line " + std::to_string(line);
+    out.back() = '\n';
+    out += "Error in " + func + " at " + file + " line " + std::to_string(line);
     return out;
 }
 

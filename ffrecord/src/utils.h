@@ -16,11 +16,11 @@
             __s, __PRETTY_FUNCTION__, __FILE__, __LINE__));    \
     } while (false)
 
-#define FFRECORD_ASSERT(X, FMT, ...)                                         \
-    do {                                                                     \
-        if (!(X)) {                                                          \
-            FFRECORD_THROW_FMT("Error: '%s' failed: " FMT, #X, __VA_ARGS__); \
-        }                                                                    \
+#define FFRECORD_ASSERT(X, FMT, ...)                                   \
+    do {                                                               \
+        if (!(X)) {                                                    \
+            FFRECORD_THROW_FMT("'%s' failed. " FMT, #X, __VA_ARGS__);  \
+        }                                                              \
     } while (false)
 
 #define FFRECORD_ASSERT1(X, MSG) FFRECORD_ASSERT(X, MSG"%s", "")
