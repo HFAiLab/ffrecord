@@ -12,14 +12,22 @@ class FileReader(_FileReader):
     def __init__(self, fname, check_data=True):
         if isinstance(fname, (str, os.PathLike)):
             fname = str(fname)
-            if os.path.isdir(fname):
+            if Path(fname).is_dir():
                 fnames = [str(p) for p in Path(fname).glob('*.ffr')]
                 fnames.sort()
                 fname = fnames
+            else:
+                fname = [fname]
         elif isinstance(fname, (list, tuple)):
             fname = [str(i) for i in fname]
         else:
-            raise TypeError("fname must be str, os.PathLike or list")
+            raise TypeError("fname must be str, os.PathLike, list or tuple")
+
+        assert len(fname) >= 1, "At least one .ffr file as input"
+        for f in fname:
+            f = Path(f)
+            assert f.is_file(), f'{f} is not a file'
+            assert f.suffix == '.ffr', f'{f} does not end with .ffr'
 
         super().__init__(fname, check_data)
 
