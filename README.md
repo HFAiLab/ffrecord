@@ -153,6 +153,7 @@ samples = dataset[indices]
 ```
 
 `ffrecord.torch.Dataset` could be combined with `ffrecord.torch.DataLoader` just like PyTorch.
+`ffrecord.torch.DataLoader` supports for skipping steps during training by `set_step()` method.
 
 ```python
 dataset = CustomDataset('train.ffr')
@@ -161,7 +162,13 @@ loader = ffrecord.torch.DataLoader(dataset,
                                    shuffle=True,
                                    num_workers=8)
 
-for i, batch in enumerate(loader):
-    # training model
+start_epoch = 5
+start_step = 100  # resume from epoch 5, step 100
+loader.set_step(start_step)
 
+for epoch in range(start_epoch, epochs):
+    for i, batch in enumerate(loader):
+        # training model
+
+    loader.set_step(0)  # remember to reset before the next epoch
 ```
