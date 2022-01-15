@@ -34,6 +34,7 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 - Python >= 3.6
 - Pytorch >= 1.6
 - NumPy
+- tqdm
 - zlib: `sudo apt-get install zliblg-dev`
 - cmake: `pip install cmake`
 
