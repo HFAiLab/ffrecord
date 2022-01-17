@@ -53,46 +53,47 @@ class ReaderRegistry():
 
 class Dataset(TorchDataset, ReaderRegistry):
     """
-    Different from `torch.utils.data.Dataset` which accepts an index as input and returns one sample,
-    `ffrecord.torch.Dataset` accepts a batch of indices as input and returns a batch of samples.
-    One advantage of `ffrecord.torch.Dataset` is that it could read a batch of data at a time using Linux AIO.
+    Different from ``torch.utils.data.Dataset`` which accepts an index as input and returns one sample,
+    ``ffrecord.torch.Dataset`` accepts a batch of indices as input and returns a batch of samples.
+    One advantage of :code:`ffrecord.torch.Dataset` is that it could read a batch of data at a time using Linux AIO.
 
-    We first read a batch of bytes data from FFReocrd file and then pass the bytes data to process()
-    function. Users need to inherit from `ffrecord.torch.Dataset` and define their custom process function.
+    We first read a batch of bytes data from FFReocrd file and then pass the bytes data to ``process()``
+    function. Users need to inherit from ``ffrecord.torch.Dataset`` and define their custom process function.
 
-    ```
-    Pipline:   indices ----------------------------> bytes -------------> samples
-                        reader.read(indices)               process()
-    ```
+    .. code-block:: text
+
+        Pipline:   indices ----------------------------> bytes -------------> samples
+                            reader.read(indices)               process()
 
     For example:
-    ```python
-    class CustomDataset(ffrecord.torch.Dataset):
 
-        def __init__(self, fname, transform=None):
-            super().__init__(fname)
-            self.transform = transform
+    .. code-block:: python
 
-        def process(self, indices, data):
-            # deserialize data
-            samples = [pickle.loads(b) for b in data]
+        class CustomDataset(ffrecord.torch.Dataset):
 
-            # transform data
-            if self.transform:
-                samples = [self.transform(s) for s in samples]
-            return samples
+            def __init__(self, fname, transform=None):
+                super().__init__(fname)
+                self.transform = transform
 
-    dataset = CustomDataset('train.ffr')
-    indices = [3, 4, 1, 0]
-    samples = dataset[indices]
-    ```
+            def process(self, indices, data):
+                # deserialize data
+                samples = [pickle.loads(b) for b in data]
+
+                # transform data
+                if self.transform:
+                    samples = [self.transform(s) for s in samples]
+                return samples
+
+        dataset = CustomDataset('train.ffr')
+        indices = [3, 4, 1, 0]
+        samples = dataset[indices]
+
+    Args:
+        fnames:     FFrecord file names
+        check_data: validate checksum or not
+
     """
     def __init__(self, fnames: Union[str, List, Tuple], check_data: bool = True):
-        """
-        Args:
-            fnames:     FFrecord file names
-            check_data: validate checksum or not
-        """
         self.fnames = fnames
         self.reader = FileReader(fnames, check_data)
 
@@ -135,8 +136,8 @@ class Subset(Dataset):
     Subset of a dataset at specified indices.
 
     Args:
-        dataset (Dataset): The whole Dataset
-        indices (sequence): Indices in the whole set selected for subset
+        dataset: The whole Dataset
+        indices: Indices in the whole set selected for subset
     """
     dataset: Dataset
     indices: Sequence[int]
@@ -159,7 +160,7 @@ class ConcatDataset(Dataset):
     This class is useful to assemble different existing datasets.
 
     Args:
-        datasets (sequence): List of datasets to be concatenated
+        datasets: List of datasets to be concatenated
     """
     datasets: List[Dataset]
     cumulative_sizes: List[int]

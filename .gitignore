@@ -7,3 +7,4 @@ dist/
 *.ffr
 benchs/bench.py
 *.png
+docs/build

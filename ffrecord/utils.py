@@ -21,7 +21,7 @@ def dump(
     Dump an indexable object to ffrecord files.
 
     Args:
-        dataset:    an indexable object which implements `__getitem__` and `__len__`
+        dataset:    an indexable object which implements :code:`__getitem__` and :code:`__len__`
         fname:      output folder (nfiles > 1) or file name (nfiles = 1)
         nfiles:     number of output files
         serializer: serialize function, it will be called if datasets[i] does not

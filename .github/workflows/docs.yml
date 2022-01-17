@@ -1,0 +1,26 @@
+name: Build and Deploy Docs
+on: [push]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2
+      - name: Install FFRecord
+        run: |
+          pip install numpy torch cmake tqdm
+          sudo apt install -y python3-pybind11 libaio-dev
+          sudo python setup.py install
+      - name: Install sphinx
+        run: pip install sphinx sphinx_rtd_theme myst-parser
+      - name: Build docs
+        run: |
+          cd docs
+          sphinx-apidoc -o ./source ../ffrecord
+          make clean && make html
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.2.2
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs/build/html # The folder the action should deploy.

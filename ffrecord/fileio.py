@@ -8,6 +8,14 @@ from pathlib import Path
 
 
 class FileReader(_FileReader):
+    """
+    FFRecord file reader.
+
+    Args:
+        fname (str, list or os.PathLike): Input file name.
+        check_data (bool, optional): validate crc32 checksum or not (default: ``True``)
+
+    """
 
     def __init__(self, fname, check_data=True):
         if isinstance(fname, (str, os.PathLike)):
@@ -42,7 +50,14 @@ class FileReader(_FileReader):
 
 
 class FileWriter(_FileWriter):
+    """
+    FFRecord file writer.
 
+    Args:
+        fname (str or os.PathLike): Output file name.
+        n (int): number of samples to be written
+
+    """
     def __init__(self, fname, n):
         assert isinstance(fname, (str, os.PathLike))
         assert Path(fname).suffix == '.ffr'
