@@ -57,13 +57,7 @@ class Dataset(TorchDataset, ReaderRegistry):
     ``ffrecord.torch.Dataset`` accepts a batch of indices as input and returns a batch of samples.
     One advantage of :code:`ffrecord.torch.Dataset` is that it could read a batch of data at a time using Linux AIO.
 
-    We first read a batch of bytes data from FFReocrd file and then pass the bytes data to ``process()``
-    function. Users need to inherit from ``ffrecord.torch.Dataset`` and define their custom process function.
-
-    .. code-block:: text
-
-        Pipline:   indices ----------------------------> bytes -------------> samples
-                            reader.read(indices)               process()
+    Users need to inherit from ``ffrecord.torch.Dataset`` and define their custom ``__getitem__()`` and ``__len__()`` function.
 
     For example:
 
