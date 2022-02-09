@@ -65,11 +65,18 @@ class Dataset(TorchDataset, ReaderRegistry):
 
         class CustomDataset(ffrecord.torch.Dataset):
 
-            def __init__(self, fname, transform=None):
-                super().__init__(fname)
+            def __init__(self, fname, check_data=True, transform=None):
+                self.reader = FileReader(fname, check_data)
                 self.transform = transform
 
-            def process(self, indices, data):
+            def __len__(self):
+                return self.reader.n
+
+            def __getitem__(self, indices):
+                # we read a batch of samples at once
+                assert isintance(indices, list)
+                data = self.reader.read(indices)
+
                 # deserialize data
                 samples = [pickle.loads(b) for b in data]
 
