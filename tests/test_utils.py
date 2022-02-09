@@ -12,7 +12,8 @@ class TestUtils(unittest.TestCase):
     def subtest_dump_to_multiple_files(self, n, nfiles):
         with tempfile.TemporaryDirectory(suffix='.ffr') as tmp:
             dataset = [i * 2 for i in range(n)]
-            dump(dataset, tmp, nfiles=nfiles)
+            raw_data = list(map(pickle.dumps, dataset))
+            dump(raw_data, tmp, nfiles=nfiles)
 
             # check # of files
             ffrs = list(Path(tmp).glob('*.ffr'))
@@ -29,7 +30,8 @@ class TestUtils(unittest.TestCase):
     def subtest_dump_single_file(self, n):
         tmp = tempfile.mktemp(suffix='.ffr', prefix='tmp-test')
         dataset = [i * 2 for i in range(n)]
-        dump(dataset, tmp, nfiles=1)
+        raw_data = list(map(pickle.dumps, dataset))
+        dump(raw_data, tmp, nfiles=1)
 
         r = FileReader(tmp, True)
         assert r.n == n

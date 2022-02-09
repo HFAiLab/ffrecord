@@ -14,25 +14,22 @@ def dump(
         dataset: Mapping[int, Any],
         fname: Union[str, os.PathLike],
         nfiles: int,
-        serializer: Callable = pickle.dumps,
         verbose: bool = False,
     ) -> None:
     r"""
-    Dump an indexable object to ffrecord files.
+    Dump an subscriptable object to ffrecord files.
 
     Args:
-        dataset:    an indexable object which implements :code:`__getitem__` and :code:`__len__`
-        fname:      output folder (nfiles > 1) or file name (nfiles = 1)
+        dataset:    an subscriptable object (support ``[]`` and ``len()``)
+        fname:      output folder (nfiles > 1) or file (nfiles = 1)
         nfiles:     number of output files
-        serializer: serialize function, it will be called if datasets[i] does not
-                    return bytes or bytearray
         verbose:    show dumping progress or not
     """
 
     n = len(dataset)
 
     if nfiles == 1:
-        _write_to_ffr(0, n, dataset, fname, serializer, verbose)
+        _write_to_ffr(0, n, dataset, fname, verbose)
         return
 
     out_dir = Path(fname)
@@ -45,7 +42,7 @@ def dump(
     for i0 in range(0, n, bs):
         ni = min(bs, n - i0)
         fname = out_dir / f"PART_{fid:05d}.ffr"
-        tasks.append([i0, ni, dataset, fname, serializer, verbose])
+        tasks.append([i0, ni, dataset, fname, verbose])
         fid += 1
 
     if len(tasks) != nfiles:
@@ -63,17 +60,11 @@ def dump(
             p.join()
 
 
-def _write_to_ffr(i0, ni, dataset, fname, serializer, verbose):
+def _write_to_ffr(i0, ni, dataset, fname, verbose):
     rng = trange if verbose else range
 
     with FileWriter(fname, ni) as w:
         for i in rng(i0, i0 + ni):
             item = dataset[i]
-
-            isbuffer = isinstance(item, (bytes, bytearray))
-            assert isbuffer or serializer is not None
-            if not isbuffer:
-                item = serializer(item)
-
             w.write_one(item)
     return

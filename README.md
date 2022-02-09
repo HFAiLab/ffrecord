@@ -118,17 +118,12 @@ reader.close()
 We also provide `ffrecord.torch.Dataset` and `ffrecord.torch.DataLoader` for PyTorch users to train
 models using FFRecord.
 
-Different from `torch.utils.data.Dataset` which accepts an index as input and returns one sample,
+Different from `torch.utils.data.Dataset` which accepts an index as input and returns only one sample,
 `ffrecord.torch.Dataset` accepts a batch of indices as input and returns a batch of samples.
 One advantage of `ffrecord.torch.Dataset` is that it could read a batch of data at a time using Linux AIO.
 
-We first read a batch of bytes data from the FFReocrd file and then pass the bytes data to `process()`
-function. Users need to inherit from `ffrecord.torch.Dataset` and define their custom `process()` function.
+Users need to inherit from `ffrecord.torch.Dataset` and define their custom `__getitem__()` and `__len__()` function.
 
-```
-Pipline:   indices ----------------------------> bytes -------------> samples
-                      reader.read(indices)               process()
-```
 
 For example:
 
@@ -136,10 +131,17 @@ For example:
 class CustomDataset(ffrecord.torch.Dataset):
 
     def __init__(self, fname, check_data=True, transform=None):
-        super().__init__(fname, check_data)
+        self.reader = FileReader(fname, check_data)
         self.transform = transform
 
-    def process(self, indices, data):
+    def __len__(self):
+        return self.reader.n
+
+    def __getitem__(self, indices):
+        # we read a batch of samples at once
+        assert isintance(indices, list)
+        data = self.reader.read(indices)
+
         # deserialize data
         samples = [pickle.loads(b) for b in data]
 
@@ -153,7 +155,8 @@ indices = [3, 4, 1, 0]
 samples = dataset[indices]
 ```
 
-`ffrecord.torch.Dataset` could be combined with `ffrecord.torch.DataLoader` just like PyTorch.
+`ffrecord.torch.DataLoader` is a drop-in replacement for PyTorch's standard dataloader.
+`ffrecord.torch.Dataset` could be combined with it just like PyTorch.
 `ffrecord.torch.DataLoader` supports for skipping steps during training by `set_step()` method.
 
 ```python
