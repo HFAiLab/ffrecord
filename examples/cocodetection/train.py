@@ -24,7 +24,7 @@ from ffdataloader import CoCoDataLoader
 
 
 def init_dist_process(args):
-    ip = os.environ['MASTER_IP']
+    ip = os.environ['MASTER_ADDR']
     port = os.environ['MASTER_PORT']
     hosts = int(os.environ['WORLD_SIZE'])  # 机器个数
     rank = int(os.environ['RANK'])  # 当前机器编号

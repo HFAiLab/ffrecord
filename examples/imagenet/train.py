@@ -14,6 +14,7 @@ from torch.optim import SGD
 from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms, models
 
+from ffrecord import FileReader
 from ffrecord.torch import Dataset, DataLoader
 
 import hfai
@@ -25,10 +26,14 @@ hfai.client.bind_hf_except_hook(Process)
 
 class FireFlyerImageNet(Dataset):
     def __init__(self, fnames, transform=None):
-        super(FireFlyerImageNet, self).__init__(fnames, check_data=True)
+        self.reader = FileReader(fnames, check_data=True)
         self.transform = transform
 
-    def process(self, indexes, data):
+    def __len__(self):
+        return self.reader.n
+
+    def __getitem__(self, indices):
+        data = self.reader.read(indices)
         samples = []
 
         for bytes_ in data:
@@ -116,7 +121,7 @@ def main(local_rank):
     val_data = '/public_dataset/1/ImageNet/val.ffr'
 
     # 多机通信
-    ip = os.environ['MASTER_IP']
+    ip = os.environ['MASTER_ADDR']
     port = os.environ['MASTER_PORT']
     hosts = int(os.environ['WORLD_SIZE'])  # 机器个数
     rank = int(os.environ['RANK'])  # 当前机器编号
