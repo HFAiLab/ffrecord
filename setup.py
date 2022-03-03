@@ -9,7 +9,7 @@ rev = '+' + subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'
                                      ]).decode('ascii').rstrip()
 version = "1.3.0" + rev
 
-cpp_module = CMakeExtension(name="_ffrecord_cpp", sourcedir="ffrecord/src")
+cpp_module = CMakeExtension(name="ffrecord._ffrecord_cpp", sourcedir="ffrecord/src")
 
 
 setup(cmdclass={"build_ext": CMakeBuild},

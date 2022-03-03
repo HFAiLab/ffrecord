@@ -1,4 +1,4 @@
-from _ffrecord_cpp import (
+from ._ffrecord_cpp import (
     FileReader as _FileReader,
     FileWriter as _FileWriter,
     checkFsAlign,
@@ -45,7 +45,7 @@ class FileReader(_FileReader):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *unsed):
         self.close()
 
 
@@ -67,5 +67,5 @@ class FileWriter(_FileWriter):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *unsed):
         self.close()
