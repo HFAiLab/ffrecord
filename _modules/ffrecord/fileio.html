@@ -64,7 +64,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for ffrecord.fileio</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">_ffrecord_cpp</span> <span class="k">import</span> <span class="p">(</span>
+<span></span><span class="kn">from</span> <span class="nn">._ffrecord_cpp</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">FileReader</span> <span class="k">as</span> <span class="n">_FileReader</span><span class="p">,</span>
     <span class="n">FileWriter</span> <span class="k">as</span> <span class="n">_FileWriter</span><span class="p">,</span>
     <span class="n">checkFsAlign</span><span class="p">,</span>
@@ -111,7 +111,7 @@
     <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">unsed</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
@@ -133,7 +133,7 @@
     <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">unsed</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 </pre></div>
 
