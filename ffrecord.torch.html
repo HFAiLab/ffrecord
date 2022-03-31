@@ -171,7 +171,7 @@ maintain the workers <cite>Dataset</cite> instances alive. (default: <code class
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="ffrecord.torch.DataLoader.dataset">
-<span class="sig-name descname"><span class="pre">dataset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.T_co</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ffrecord.torch.DataLoader.dataset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dataset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">T_co</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ffrecord.torch.DataLoader.dataset" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -196,7 +196,7 @@ maintain the workers <cite>Dataset</cite> instances alive. (default: <code class
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="ffrecord.torch.DataLoader.sampler">
-<span class="sig-name descname"><span class="pre">sampler</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.sampler.Sampler</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ffrecord.torch.DataLoader.sampler" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sampler</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.utils.data.sampler.Sampler</span></em><a class="headerlink" href="#ffrecord.torch.DataLoader.sampler" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -222,7 +222,7 @@ One advantage of <code class="code docutils literal notranslate"><span class="pr
 <p>For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CustomDataset</span><span class="p">(</span><span class="n">ffrecord</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">check_data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">check_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">FileReader</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">check_data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
 
