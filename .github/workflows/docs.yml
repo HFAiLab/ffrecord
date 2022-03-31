@@ -7,11 +7,15 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v2
+      - name: Install Python3
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
       - name: Install FFRecord
         run: |
           pip install numpy torch cmake tqdm pybind11>=2.8
           sudo apt install -y libaio-dev
-          sudo python setup.py install
+          python setup.py install
       - name: Install sphinx
         run: pip install sphinx sphinx_rtd_theme myst-parser
       - name: Build docs
