@@ -37,7 +37,7 @@ which supports random access and Linux Asynchronous Input/Output (AIO) read.
 - tqdm
 - zlib: `sudo apt install zliblg-dev`
 - cmake: `pip install cmake`
-- pybind11: `sudo apt install python3-pybind11`
+- pybind11 >= 2.8
 
 ### Install
 

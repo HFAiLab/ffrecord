@@ -2,7 +2,14 @@ cmake_minimum_required(VERSION 3.10)
 
 project(ffrecord)
 
-find_package(pybind11)
+if( "${PYBIND11_CMAKE_DIR}" STREQUAL "" )
+    message("PYBIND11_CMAKE_DIR is not set")
+else()
+    message("PYBIND11_CMAKE_DIR is set to: ${PYBIND11_CMAKE_DIR}")
+endif()
+
+set(pybind11_DIR ${PYBIND11_CMAKE_DIR})
+find_package(pybind11 REQUIRED)
 
 ##### PYBIND11 WRAPPER #####
 pybind11_add_module(_ffrecord_cpp SHARED

@@ -31,8 +31,8 @@ jobs:
           python-version: '3.6'
       - name: Install packages
         run: |
-          pip install numpy torch cmake tqdm
-          sudo apt install -y python3-pybind11 libaio-dev
+          pip install numpy torch cmake tqdm pybind11>=2.8
+          sudo apt install -y libaio-dev
       - name: Build & Install
         run: python setup.py install
       - name: test

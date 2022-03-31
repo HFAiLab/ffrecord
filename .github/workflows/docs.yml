@@ -9,8 +9,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Install FFRecord
         run: |
-          pip install numpy torch cmake tqdm
-          sudo apt install -y python3-pybind11 libaio-dev
+          pip install numpy torch cmake tqdm pybind11>=2.8
+          sudo apt install -y libaio-dev
           sudo python setup.py install
       - name: Install sphinx
         run: pip install sphinx sphinx_rtd_theme myst-parser
