@@ -1,8 +1,3 @@
-import hf_env
-hf_env.set_env('202105')
-import hfai
-
-import datetime
 import builtins
 import os
 import time
@@ -13,11 +8,9 @@ import torch
 import torch.optim as optim
 import torch.multiprocessing as mp
 from torch.utils.tensorboard import SummaryWriter
-from torch.multiprocessing import Process
 
 import hfai
-import hfai.nccl.distributed as dist
-hfai.client.bind_hf_except_hook(Process)
+import hfai.distributed as dist
 
 from net.ssd import SSD300, MultiBoxLoss
 from ffdataloader import CoCoDataLoader
@@ -181,7 +174,7 @@ def train_for_one_epoch(model,
                 t.reset()
 
         step += 1
-    
+
     # reset
     args.start_step = 0
 
@@ -218,7 +211,7 @@ def eval_for_one_epoch(model,
         losses.update(loss, images.size(0))
 
         # measure elapsed time
-        batch_time.update(time.time() - end) 
+        batch_time.update(time.time() - end)
         end = time.time()
 
         if step % print_freq == 0:

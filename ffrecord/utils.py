@@ -1,11 +1,9 @@
 
 from typing import Union, Any, Mapping, Callable
 import multiprocessing as mp
-import pickle
 from pathlib import Path
 import os
 import warnings
-from tqdm import trange
 
 from .fileio import FileWriter
 
@@ -61,6 +59,7 @@ def dump(
 
 
 def _write_to_ffr(i0, ni, dataset, fname, verbose):
+    from tqdm import trange
     rng = trange if verbose else range
 
     with FileWriter(fname, ni) as w:

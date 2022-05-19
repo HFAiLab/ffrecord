@@ -34,6 +34,7 @@ class FileReader(_FileReader):
         assert len(fname) >= 1, "At least one .ffr file as input"
         for f in fname:
             f = Path(f)
+            assert f.exists(), f'{f} does not exist'
             assert f.is_file(), f'{f} is not a file'
             assert f.suffix == '.ffr', f'{f} does not end with .ffr'
 

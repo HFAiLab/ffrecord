@@ -1,27 +1,20 @@
-import hf_env
-hf_env.set_env('202105')
-
 import os
 import time
 import pickle
 from pathlib import Path
 import torch
-import torchvision
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
 from torch.optim import SGD
 from torch.optim.lr_scheduler import StepLR
-from torchvision import datasets, transforms, models
+from torchvision import transforms, models
 
 from ffrecord import FileReader
 from ffrecord.torch import Dataset, DataLoader
 
 import hfai
-import hfai.nccl.distributed as dist
-from torch.multiprocessing import Process
-
-hfai.client.bind_hf_except_hook(Process)
+import hfai.distributed as dist
 
 
 class FireFlyerImageNet(Dataset):
@@ -78,18 +71,18 @@ def train(dataloader, model, criterion, optimizer, scheduler, epoch, local_rank,
             hfai.go_suspend()
 
 
+@torch.no_grad()
 def validate(dataloader, model, criterion, epoch, local_rank):
     loss, correct1, correct5, total = torch.zeros(4).cuda()
     model.eval()
-    with torch.no_grad():
-        for step, batch in enumerate(dataloader):
-            samples, labels = [x.cuda(non_blocking=True) for x in batch]
-            outputs = model(samples)
-            loss += criterion(outputs, labels)
-            _, preds = outputs.topk(5, -1, True, True)
-            correct1 += torch.eq(preds[:, :1], labels.unsqueeze(1)).sum()
-            correct5 += torch.eq(preds, labels.unsqueeze(1)).sum()
-            total += samples.size(0)
+    for step, batch in enumerate(dataloader):
+        samples, labels = [x.cuda(non_blocking=True) for x in batch]
+        outputs = model(samples)
+        loss += criterion(outputs, labels)
+        _, preds = outputs.topk(5, -1, True, True)
+        correct1 += torch.eq(preds[:, :1], labels.unsqueeze(1)).sum()
+        correct5 += torch.eq(preds, labels.unsqueeze(1)).sum()
+        total += samples.size(0)
 
     for x in [loss, correct1, correct5, total]:
         dist.reduce(x, 0)
