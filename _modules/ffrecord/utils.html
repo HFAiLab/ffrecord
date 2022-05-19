@@ -67,11 +67,9 @@
 <span></span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Callable</span>
 <span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">trange</span>
 
 <span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">FileWriter</span>
 
@@ -127,6 +125,7 @@
 
 
 <span class="k">def</span> <span class="nf">_write_to_ffr</span><span class="p">(</span><span class="n">i0</span><span class="p">,</span> <span class="n">ni</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">trange</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">trange</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="nb">range</span>
 
     <span class="k">with</span> <span class="n">FileWriter</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">ni</span><span class="p">)</span> <span class="k">as</span> <span class="n">w</span><span class="p">:</span>
