@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }} with py ${{ matrix.py_version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        py_version: ['3.6', '3.7', '3.8']
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Python3
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py_version }}
+
+      - name: Install packages
+        run: |
+          pip install numpy torch cmake tqdm pybind11>=2.8 wheel
+          sudo apt install -y libaio-dev
+
+      - name: Build wheel
+        run: |
+          python setup.py clean
+          python setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./dist/*.whl

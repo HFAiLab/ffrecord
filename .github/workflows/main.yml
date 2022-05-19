@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Tests
 
 # Controls when the workflow will run
 on:
@@ -18,20 +18,26 @@ jobs:
   # This workflow contains a single job called "Linux"
   Linux:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    name: Run tests on ${{ matrix.os }}, py ${{ matrix.py_version }}, torch ${{ matrix.torch_version }}
+    runs-on: ${{ matrix.os }}
     env:
       DISABLE_TEST_LARGE_SAMPLE: True
-
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        py_version: ['3.6', '3.7', '3.8']
+        torch_version: ['1.8', '1.10']
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v2
       - name: Install Python3
         uses: actions/setup-python@v2
         with:
-          python-version: '3.6'
+          python-version: ${{ matrix.py_version }}
       - name: Install packages
         run: |
-          pip install numpy torch cmake tqdm pybind11>=2.8
+          pip install numpy cmake tqdm pybind11>=2.8
+          pip install torch==${{ matrix.torch_version }}
           sudo apt install -y libaio-dev
       - name: Build & Install
         run: python setup.py install
