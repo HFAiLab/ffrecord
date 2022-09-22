@@ -57,6 +57,8 @@ class DataLoader(TorchDataLoader):
         persistent_workers (bool, optional): If ``True``, the data loader will not shutdown
             the worker processes after a dataset has been consumed once. This allows to
             maintain the workers `Dataset` instances alive. (default: ``False``)
+        skippable (bool, optional): If ``True``, the data loader will be skippable by ``set_step``.
+            Set it to ``False`` to be compatible with pytorch lightning.
 
     """
     def __init__(self,
@@ -74,13 +76,16 @@ class DataLoader(TorchDataLoader):
                  generator=None,
                  *,
                  prefetch_factor: int = 2,
-                 persistent_workers: bool = False):
+                 persistent_workers: bool = False,
+                 skippable: bool = True):
 
         # use fork to create subprocesses
         if num_workers == 0:
             multiprocessing_context = None
         else:
             multiprocessing_context = 'fork'
+
+        self.skippable = skippable
 
         super(DataLoader,
               self).__init__(dataset=dataset,
@@ -102,11 +107,13 @@ class DataLoader(TorchDataLoader):
         if isinstance(dataset, Dataset):
             self._dataset_kind = _DatasetKind.SliceMap
 
-        assert self.batch_sampler is not None
-        batch_sampler = SkipableSampler(self.batch_sampler)
-        object.__setattr__(self, 'batch_sampler', batch_sampler)
+        if skippable:
+            assert self.batch_sampler is not None
+            batch_sampler = SkipableSampler(self.batch_sampler)
+            object.__setattr__(self, 'batch_sampler', batch_sampler)
 
     def set_step(self, step: int) -> None:
+        assert self.skippable, "This dataloader is not skippable"
         assert 0 <= step < len(self.batch_sampler.sampler)
         self.batch_sampler.set_step(step)
 
@@ -128,9 +135,6 @@ class SkipableSampler(Sampler[List[int]]):
             yield index
 
     def __len__(self) -> int:
-        return self._len()
-
-    def _len(self) -> int:
         return len(self.sampler) - self.step
 
     def set_step(self, step: int) -> None:
