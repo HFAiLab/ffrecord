@@ -9,3 +9,4 @@ benchs/bench.py
 *.png
 docs/build
 output/
+lightning_logs

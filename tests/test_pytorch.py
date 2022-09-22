@@ -175,10 +175,13 @@ class TestDataset(unittest.TestCase):
         ds2 = DummyFFDataset(file2, True)
 
         ds = ConcatDataset([ds1, ds2])
+        ds3 = ds1 + ds2
+        assert len(ds3) == len(ds)
         assert len(ds) == len(ds1) + len(ds2)
 
         indices = list(range(len(ds)))
         data1 = ds[indices]
+        assert ds[indices] == ds3[indices]
 
         for i in range(len(ds)):
             a = data1[i]

@@ -131,6 +131,9 @@ class Dataset(TorchDataset, ReaderRegistry):
         except AttributeError:
             return ReaderRegistry.__getattr__(self, name)
 
+    def __add__(self, other):
+        return ConcatDataset([self, other])
+
 
 class Subset(Dataset):
     r"""
