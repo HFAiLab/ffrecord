@@ -195,7 +195,10 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">TorchDataset</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">ReaderRegistry</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="n">ReaderRegistry</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConcatDataset</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="Subset"><a class="viewcode-back" href="../../../ffrecord.torch.html#ffrecord.torch.Subset">[docs]</a><span class="k">class</span> <span class="nc">Subset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>

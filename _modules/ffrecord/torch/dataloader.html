@@ -123,6 +123,8 @@
 <span class="sd">        persistent_workers (bool, optional): If ``True``, the data loader will not shutdown</span>
 <span class="sd">            the worker processes after a dataset has been consumed once. This allows to</span>
 <span class="sd">            maintain the workers `Dataset` instances alive. (default: ``False``)</span>
+<span class="sd">        skippable (bool, optional): If ``True``, the data loader will be skippable by ``set_step``.</span>
+<span class="sd">            Set it to ``False`` to be compatible with pytorch lightning.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -140,13 +142,16 @@
                  <span class="n">generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="o">*</span><span class="p">,</span>
                  <span class="n">prefetch_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-                 <span class="n">persistent_workers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+                 <span class="n">persistent_workers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">skippable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 
         <span class="c1"># use fork to create subprocesses</span>
         <span class="k">if</span> <span class="n">num_workers</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">multiprocessing_context</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">multiprocessing_context</span> <span class="o">=</span> <span class="s1">&#39;fork&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">skippable</span> <span class="o">=</span> <span class="n">skippable</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">,</span>
               <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span>
@@ -168,11 +173,13 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_kind</span> <span class="o">=</span> <span class="n">_DatasetKind</span><span class="o">.</span><span class="n">SliceMap</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_sampler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="n">batch_sampler</span> <span class="o">=</span> <span class="n">SkipableSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_sampler</span><span class="p">)</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;batch_sampler&#39;</span><span class="p">,</span> <span class="n">batch_sampler</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skippable</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_sampler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">batch_sampler</span> <span class="o">=</span> <span class="n">SkipableSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_sampler</span><span class="p">)</span>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;batch_sampler&#39;</span><span class="p">,</span> <span class="n">batch_sampler</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DataLoader.set_step"><a class="viewcode-back" href="../../../ffrecord.torch.html#ffrecord.torch.DataLoader.set_step">[docs]</a>    <span class="k">def</span> <span class="nf">set_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">skippable</span><span class="p">,</span> <span class="s2">&quot;This dataloader is not skippable&quot;</span>
         <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_sampler</span><span class="o">.</span><span class="n">sampler</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_sampler</span><span class="o">.</span><span class="n">set_step</span><span class="p">(</span><span class="n">step</span><span class="p">)</span></div></div>
 
@@ -194,9 +201,6 @@
             <span class="k">yield</span> <span class="n">index</span>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_len</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">_len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span>
 
     <span class="k">def</span> <span class="nf">set_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
