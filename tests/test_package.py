@@ -14,15 +14,15 @@ class TestPackFolder(unittest.TestCase):
 
     def setUp(self):
         # create dummy files
-        tmp_dir = "test_pack_folder/"
-        self.tmp_dir = Path(tmp_dir)
+        self.ffr_name = Path("packed.ffr")
+        self.tmp_dir = Path("test_pack_folder")
         self.tmp_dir.mkdir(exist_ok=True)
         for i in range(20):
-            with open(tmp_dir + f"{i:03d}", "wb") as fp:
+            with open(self.tmp_dir / f"{i:03d}", "wb") as fp:
                 data = bytearray([(i + j) % 256 for j in range(1000 + i)])
                 fp.write(data)
 
-        pack_folder(self.tmp_dir, "packed.ffr", verbose=True)
+        pack_folder(self.tmp_dir, self.ffr_name, verbose=True)
 
     def tearDown(self) -> None:
         # delete dummy files
@@ -30,9 +30,10 @@ class TestPackFolder(unittest.TestCase):
         for file in files:
             file.unlink()
         self.tmp_dir.rmdir()
+        self.ffr_name.unlink()
 
     def test_packfolder(self):
-        folder = PackedFolder("packed.ffr")
+        folder = PackedFolder(self.ffr_name)
         assert folder.num_files() == 20
         assert folder.is_file("000")
         assert not folder.is_dir("000")
