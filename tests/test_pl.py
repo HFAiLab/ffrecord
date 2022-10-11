@@ -71,7 +71,7 @@ class TestDDPHF(unittest.TestCase):
             max_epochs=3,
             accelerator="gpu",
             devices=8,
-            strategy="ddp_hf",
+            strategy="ddp_bind_numa",
             plugins=[HFAIEnvironment()]
         )
 

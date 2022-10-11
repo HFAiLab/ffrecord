@@ -177,3 +177,54 @@ for epoch in range(start_epoch, epochs):
 
     loader.set_step(0)  # remember to reset before the next epoch
 ```
+
+
+### Pack a folder into ffrecord
+
+FFRecord could also be used to pack a folder into a single file, which could be accessed without unpacking.
+
+For example:
+
+Assume we have a folder named `just_a_folder`:
+
+```shell
+$ tree just_a_folder
+
+just_a_folder/
+├── 001.txt
+├── 002.txt
+├── 003.txt
+├── 004.txt
+├── 005.txt
+└── just_another_folder
+    └── 006.txt
+```
+
+Now we pack this folder into a file named `packed.ffr`:
+
+```python
+from ffrecord import pack_folder
+pack_folder("just_a_folder", "packed.ffr", verbose=True)
+```
+
+And then we could access the packed folder by `PackedFolder`:
+
+```python
+>>> import io
+>>> from ffrecord import PackedFolder
+>>>
+>>> folder = PackedFolder("packed.ffr")
+>>> folder.list()
+['001.txt', '002.txt', '003.txt', '004.txt', '005.txt', 'just_another_folder']
+>>> folder.list('just_another_folder')
+['006.txt']
+>>> folder.is_file("just_another_folder")
+False
+>>> folder.is_dir("just_another_folder")
+True
+>>> folder.exists("just_another_folder")
+True
+>>> fp = io.BytesIO(folder.read('001.txt'))
+>>> data = fp.read()  # binary data
+>>> list_of_data = folder.read(["001.txt", "002.txt"])  # read multiple files by Linux AIO
+```
