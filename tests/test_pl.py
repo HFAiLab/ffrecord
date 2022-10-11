@@ -8,8 +8,8 @@ from ffrecord.torch import DataLoader, Dataset
 print(ffrecord.__version__, ffrecord)
 
 import os
-env = os.environ["HF_ENV_NAME"]
-exclude_envs = ["py3-202105", "py38-202207"]
+env = os.getenv("HF_ENV_NAME", None)
+include_envs = ["py3-202111", "py38-202111"]
 
 
 class ToyDataset(Dataset):
@@ -44,7 +44,7 @@ class ToyModel(nn.Module):
 
 class TestDDPHF(unittest.TestCase):
 
-    @unittest.skipIf(env in exclude_envs, f"env {env} is not supported")
+    @unittest.skipIf(env not in include_envs, f"env {env} is not supported")
     def test_ddp_hf(self):
         import pytorch_lightning as pl
         from hfai.pl import HFAIEnvironment
